@@ -103,13 +103,31 @@ let vector = (function () {
 
 let blockTypes = (function () {
     return {
-        "W": {name: "wall", color: color(200)},
+        "W": {name: "wall", color: color(200), neededColored: []},
+        "1": {name: "wall", color: color(200), neededColored: ["top"]},
+        "2": {name: "wall", color: color(200), neededColored: ["left"]},
+        "3": {name: "wall", color: color(200), neededColored: ["bottom"]},
+        "4": {name: "wall", color: color(200), neededColored: ["right"]},
+        "5": {name: "wall", color: color(200), neededColored: ["top", "left"]},
+        "6": {name: "wall", color: color(200), neededColored: ["top", "bottom"]},
+        "7": {name: "wall", color: color(200), neededColored: ["top", "right"]},
+        "8": {name: "wall", color: color(200), neededColored: ["left", "bottom"]},
+        "9": {name: "wall", color: color(200), neededColored: ["left", "right"]},
+        "0": {name: "wall", color: color(200), neededColored: ["bottom", "right"]},
         "#": {name: "portal", color: color(200)},
         "R": {name: "color", color: color(200, 100, 100), colorName: "red"},
         "G": {name: "color", color: color(100, 200, 100), colorName: "green"},
         "B": {name: "color", color: color(100, 100, 200), colorName: "blue"},
     };
 })();
+
+// colors
+let colors = {
+    "red": color(200, 100, 100),
+    "green": color(100, 200, 100),
+    "blue": color(100, 100, 200),
+    "none": color(100),
+};
 
 // constructors
 
@@ -129,6 +147,10 @@ Box = (function () {
         // dimensions
         this.dimensions = {w: config.w, h: config.h};
     }
+
+    Box.prototype.getCenter = function() {
+        return vector.new(this.position.x + this.dimensions.w/2, this.position.y + this.dimensions.h/2);
+    };
 
     Box.prototype.run = function () {
 
@@ -156,7 +178,24 @@ Block = (function () {
         this.type = config.type.name;
         this.color = config.type.color;
 
+        this.sides = {
+            "left": vector.new(-1, 0),
+            "right": vector.new(1, 0),
+            "top": vector.new(0, -1),
+            "bottom": vector.new(0, 1),
+        };
+
+        // if its a color block, store its color in this.colorName
         if (this.type === "color") this.colorName = config.type.colorName;
+
+        // if its a wall block keep an array with objects showing the colors of its sides.
+        if (this.type === "wall") {            
+            this.sideColors = [];
+
+            for (let i in config.neededColored) {
+                this.sideColors.push({color: "none", position: config.neededColored[i]});
+            }
+        };
     }
 
     Block.prototype = Object.create(Box.prototype);
@@ -165,6 +204,30 @@ Block = (function () {
         noStroke();
         fill(this.color);
         rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
+
+        if (this.type === "wall") {
+            for (let i in this.sideColors) {
+
+                let direction = this.sides[this.sideColors[i].position];
+                fill(colors[this.sideColors[i].color]);
+
+                let center = vector.new(this.getCenter().x, this.getCenter().y);
+
+                let xPositions = [
+                    center.x - this.dimensions.w/2 * Math.sign(direction.x),
+                    center.x + this.dimensions.w/2 * Math.sign(direction.x),
+                    center.x + this.dimensions.w/4 * Math.sign(direction.x),
+                    center.x - this.dimensions.w/4 * Math.sign(direction.x),
+                ];
+
+                let yPositions = [
+                    center.y - this.dimensions.h/2 * Math.sign(direction.y),
+                    center.y + this.dimensions.h/2 * Math.sign(direction.y),
+                    center.y + this.dimensions.h/4 * Math.sign(direction.y),
+                    center.y - this.dimensions.h/4 * Math.sign(direction.y),
+                ];
+            }
+        }
     };
 
     Block.prototype.update = function () {
@@ -178,9 +241,8 @@ player = (function () {
     function Player(config) {
         Box.call(this, config);
 
-        this.color = config.color;
-        this.health = 100;
         this.nickname = "Player1";
+        this.health = 100;
 
         this.movementPower = 5.5;
 
@@ -194,19 +256,23 @@ player = (function () {
         this.colidingWith = [];
 
         this.colorName = "none";
-
-        this.colors = {
-            "red": color(200, 100, 100),
-            "green": color(100, 200, 100),
-            "blue": color(100, 100, 200),
-            "none": color(100),
-        };
     }
 
     Player.prototype = Object.create(Box.prototype);
 
-    Player.prototype.getCenter = function() {
-        return vector.new(this.position.x + this.dimensions.w/2, this.position.y + this.dimensions.h/2);
+    Player.prototype.reset = function(x, y) {
+        this.canJump = false;
+
+        this.startingCoyoteTime = 4;
+        this.coyoteFrames = this.startingCoyoteTime;
+
+        this.colidingWith = [];
+
+        this.colorName = "none";
+
+        this.velocity = vector.new(0, 0);
+        this.position = vector.new(x, y);
+
     };
 
     Player.prototype.moveX = function () {
@@ -268,7 +334,11 @@ player = (function () {
             let b = this.colidingWith[i];
 
             if (b.type === "color") {
+
+                // get the center of the square on the axis that were coliding on
                 let center = this.getCenter()[opositeDirec];
+
+                // if the center of the player is colliding or this is the only block were coliding with
                 if ((center > b.position[opositeDirec] && center < b.position[opositeDirec] + b.dimensions[direcToDimensionMap[opositeDirec]]) || this.colidingWith.length <= 1) {
                     this.colorName = b.colorName;
                 }
@@ -321,7 +391,7 @@ player = (function () {
         this.velocity.y += this.gravity;
 
         this.move();
-        this.color = this.colors[this.colorName];
+        this.color = colors[this.colorName];
     };
 
     Player.prototype.display = function () {
@@ -434,6 +504,12 @@ level = (function () {
                     continue;
                 }
 
+                // skip if this is the square that the player spawns in
+                if (typeInLevelArr === "@") {
+                    player.reset(j * BLOCK_SIZE, i * BLOCK_SIZE);
+                    continue;
+                }
+
                 // create the block
                 var b = new Block({
                     x: j * BLOCK_SIZE, y: i * BLOCK_SIZE,
@@ -513,19 +589,35 @@ level = (function () {
     return new Level();
 })();
 
+// "1": ["top"]
+// "2": ["left"]
+// "3": ["bottom"]
+// "4": ["right"]
+// "5": ["top", "left"]
+// "6": ["top", "bottom"]
+// "7": ["top", "right"]
+// "8": ["left", "bottom"]
+// "9": ["left", "right"]
+// "0": ["bottom", "right"]
+// #: portal
+// R: red color
+// G: green color
+// B: blue color
+// @: spawn 
+
 level.addLevel([
     "W",
     "WW",
     "WWWW",
     "WWWW",
-    "WWWW",
+    "WWWW@",
     "WWWWW",
     "WWWWW          W",
     "WWWWW",
     "WWWRW               W",
     "WW             B    W",
     "WW          G  W    W",
-    "WWWRWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWRWWWWW1WWWWWWWWWWWWWWWWWWW",
 ]);
 
 level.fillLevel();
