@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html> 
+    <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c&family=Rowdies:wght@300;400;700&family=Signika:wght@300..700&display=swap" rel="stylesheet">
+
+
+
+        <title>Gravit i</title> 
+        <style type="text/css">
+
+            *{
+                margin: 0px;
+                overflow: hidden;
+            }            
+            
+        </style>
+    </head>
+    <body>
+        <p align = "center">
+            <canvas id="mycanvas"></canvas> 
+        </p>
+    </body>
+ 
+    <script src="https://cdn.jsdelivr.net/processing.js/1.4.8/processing.min.js"></script> 
+
+    <script type>
+
+function main() {
+
+var programCode = function (processingInstance) {
+with (processingInstance) {
+
+// setup
+
+angleMode = "radians";
+
+size(600, 600);
+smooth();
+frameRate(60);
+
+// constants
+
+const CONSTRAINING_DIMENSION = min(width, height);
+const OTHER_DIMENSION = max(width, height);
+const BLOCK_SIZE = 40;
+
+// global variables
+
+let click = false;
+let keys = {};
+let scene = 'play';
+
+// shortcut to console.log
+let log = (message) => {
+    console.log(message);
+}
+
+// utility functions
+
+let utilities = (function () {
+    return {
+        AABB: function(thing1, thing2) {
+
+            let p1 = thing1.position;
+            let p2 = thing2.position;
+
+            let d1 = thing1.dimensions;
+            let d2 = thing2.dimensions;
+
+            // are they overlapping?
+            return (p1.x + d1.w > p2.x) && (p1.y + d1.h > p2.y) && (p1.x < p2.x + d2.w) && (p1.y < p2.y + d2.h);
+        },
+    };
+})();
+
+// vectors
+
+let vector = (function () {
+    let vector = {}
+
+    vector.new = (x, y) => {
+        return {x: x, y: y};
+    }
+
+    vector.add = (vec1, vec2) => {
+        return vector.new(vec1.x + vec2.x, vec1.y + vec2.y);
+    }
+
+    vector.mult = (vec, amt) => {
+        return vector.new(vec.x * amt, vec.y * amt);
+    }
+
+    vector.sub = (vec1, vec2) => {
+        return vector.new(vec1.x - vec2.x, vec1.y - vec2.y);
+    }
+
+    return vector;
+})();
+
+// block types
+
+let blockTypes = (function () {
+    return {
+        "W": {name: "wall", color: color(200)},
+        "#": {name: "portal", color: color(200)},
+        "R": {name: "color", color: color(200, 100, 100), colorName: "red"},
+        "G": {name: "color", color: color(100, 200, 100), colorName: "green"},
+        "B": {name: "color", color: color(100, 100, 200), colorName: "blue"},
+    };
+})();
+
+// constructors
+
+let Box, Block, player, level, scenes, _camera;
+
+// Box is the main constructor that both Block and Player inherit from
+Box = (function () {
+
+    function Box(config) {
+
+        // position
+        this.position = {x: config.x, y: config.y};
+
+        // velocity
+        this.velocity = {x: 0, y:0}
+
+        // dimensions
+        this.dimensions = {w: config.w, h: config.h};
+    }
+
+    Box.prototype.run = function () {
+
+        // update the box
+        this.update();
+
+        // run the box
+        this.display();
+    };
+
+    Box.prototype.coliding = function (other) {
+        return utilities.AABB(this, other);
+    }
+
+    // return the Box constructor to the golbal variable 'Box'
+    return Box;
+})();
+
+Block = (function () {
+    function Block(config) {
+
+
+        Box.call(this, config);
+
+        this.type = config.type.name;
+        this.color = config.type.color;
+
+        if (this.type === "color") this.colorName = config.type.colorName;
+    }
+
+    Block.prototype = Object.create(Box.prototype);
+
+    Block.prototype.display = function () {
+        noStroke();
+        fill(this.color);
+        rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
+    };
+
+    Block.prototype.update = function () {
+
+    };
+
+    return Block;
+})();
+
+player = (function () {
+    function Player(config) {
+        Box.call(this, config);
+
+        this.color = config.color;
+        this.health = 100;
+        this.nickname = "Player1";
+
+        this.movementPower = 5.5;
+
+        this.gravity = 2.1;
+        this.jumpPower = 27.3;
+        this.canJump = false;
+
+        this.startingCoyoteTime = 4;
+        this.coyoteFrames = this.startingCoyoteTime;
+
+        this.colidingWith = [];
+
+        this.colorName = "none";
+
+        this.colors = {
+            "red": color(200, 100, 100),
+            "green": color(100, 200, 100),
+            "blue": color(100, 100, 200),
+            "none": color(100),
+        };
+    }
+
+    Player.prototype = Object.create(Box.prototype);
+
+    Player.prototype.getCenter = function() {
+        return vector.new(this.position.x + this.dimensions.w/2, this.position.y + this.dimensions.h/2);
+    };
+
+    Player.prototype.moveX = function () {
+        this.position.x += this.velocity.x;
+        this.velocity.x *= 0.4;
+    };
+
+    Player.prototype.moveY = function () {
+        this.position.y += this.velocity.y;
+        this.velocity.y *= 0.999;
+    };
+
+    Player.prototype.move = function () {
+
+        this.canJump = false;
+        this.coyoteFrames --;
+
+        this.moveX();
+
+        this.colisions("x");
+
+        this.moveY();
+
+        this.colisions("y");
+    };
+
+    Player.prototype.colisions = function(direc) {
+        this.checkColisions();
+
+        if (this.colidingWith.length > 0) {
+            this.resolveColisions(direc);
+        }
+    };
+
+    Player.prototype.checkColisions = function () {
+        this.colidingWith = [];
+
+        for (var i in level.currentLevel) {
+            if (level.currentLevel[i] && this.coliding(level.currentLevel[i])) {
+                this.colidingWith.push(level.currentLevel[i]);
+            }
+        }
+    };
+
+    Player.prototype.resolveColisions = function (direc) {
+
+        let direcToDimensionMap = {
+            "x": "w",
+            "y": "h",
+        };
+
+        let direcs = ["x", "y"];
+        let opositeDirec = direcs[(direcs.indexOf(direc) + 1)%direcs.length]
+
+
+        for (let i in this.colidingWith) {
+
+            // shortcut to make less typing
+            let b = this.colidingWith[i];
+
+            if (b.type === "color") {
+                let center = this.getCenter()[opositeDirec];
+                if ((center > b.position[opositeDirec] && center < b.position[opositeDirec] + b.dimensions[direcToDimensionMap[opositeDirec]]) || this.colidingWith.length <= 1) {
+                    this.colorName = b.colorName;
+                }
+            }
+
+            if (this.velocity[direc] > 0) {
+
+                if (direc === "y") {
+                    // allow jumping because landed on top of a block
+                    this.canJump = true;
+                    this.coyoteFrames = this.startingCoyoteTime;
+                }
+
+                this.position[direc] = b.position[direc] - this.dimensions[direcToDimensionMap[direc]];
+                this.velocity[direc] = 0;
+
+            } else if (this.velocity[direc] < 0) {
+
+                this.position[direc] = b.position[direc] + b.dimensions[direcToDimensionMap[direc]];
+                this.velocity[direc] = 0;
+
+            }
+        }
+
+    };
+
+    Player.prototype.update = function () {
+
+        if (keys[LEFT] || keys.a) {
+
+            this.velocity.x -= this.movementPower;
+
+        }
+
+        if (keys[RIGHT] || keys.d) {
+
+            this.velocity.x += this.movementPower;
+
+        }
+
+        if ((keys[UP] || keys.w) && (this.canJump || this.coyoteFrames > 0)) {
+            
+            this.canJump = false;
+            this.coyoteFrames = 0;
+
+            this.velocity.y -= this.jumpPower;
+
+        }
+
+        this.velocity.y += this.gravity;
+
+        this.move();
+        this.color = this.colors[this.colorName];
+    };
+
+    Player.prototype.display = function () {
+        noStroke();
+        fill(this.color);
+        rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
+        // rect(0, 0, this.dimensions.w, this.dimensions.h);
+    };
+
+    return new Player({
+        x: 200, y: 200,
+        w: BLOCK_SIZE * 0.8, h: BLOCK_SIZE*0.8,
+        color: color(100, 100, 200),
+    });
+})();
+
+_camera = (function () {
+    function Camera(target) {
+
+        this.target = target;
+        this.position = vector.new(this.target.getCenter().x, this.target.getCenter().y);
+
+        this.maxDistanceFromTarget = 100;
+        this.goodDistanceFromTarget = 50;
+
+        // this.goingTotargetX = false;
+        // this.goingTotargetY = false;
+    }
+
+    Camera.prototype.run = function() {
+        // if (abs(this.target.position.x - this.position.x) > this.maxDistanceFromTarget) {
+        //     this.position.x = this.target.position.x - this.maxDistanceFromTarget * Math.sign(this.target.position.x - this.position.x);
+        //     // this.goingTotargetX = true;
+        // }
+
+        // if (abs(this.target.position.y - this.position.y) > this.maxDistanceFromTarget) {
+        //     this.position.y = this.target.position.y - this.maxDistanceFromTarget * Math.sign(this.target.position.y - this.position.y);
+        //     // this.goingTotargetY = true;
+        // }
+
+        this.position.x = lerp(this.position.x, this.target.getCenter().x + this.target.velocity.x * 20, 0.1);
+        this.position.y = lerp(this.position.y, this.target.getCenter().y - 100, 0.01);
+
+        // if (this.goingTotargetX) {
+        //     this.position.x = lerp(this.position.x, this.target.getCenter().x, 0.1);
+
+        //     if (abs(this.position.x - this.target.getCenter().x) < 10) {
+        //         this.goingTotargetX = false;
+        //     } 
+        // }
+
+        // if (this.goingTotargetY) {
+        //     this.position.y = lerp(this.position.y, this.target.getCenter().y, 0.1);
+
+        //     if (abs(this.position.y - this.target.getCenter().y) < 10) {
+        //         this.goingTotargetY = false;
+        //     } 
+        // }
+    };
+
+    return new Camera(player);
+})();
+
+level = (function () {
+    function Level() {
+
+        // array of level data
+        this.levels = [];
+
+        // index of the current level
+        this.currentLevelInd = 0;
+
+        // array containing all of the block objects in the current level
+        this.currentLevel = [];
+
+
+    }
+
+    Level.prototype.runBlocks = function () {
+
+        // loop through all of the blocks and run them
+        for (var i in this.currentLevel) {
+
+            // if the space is an empty block, skip
+            if (!this.currentLevel[i]) {
+                continue;
+            }
+
+            // run the block
+            this.currentLevel[i].run();
+        }
+    };
+
+    Level.prototype.fillLevel = function () {
+
+        // convert the level data into an array of block objects
+
+        // loop through all of the rows in the level to be used
+        for (var i in this.levels[this.currentLevelInd]) {
+
+            // loop through all of the data in the row currently being looped through
+            for (var j in this.levels[this.currentLevelInd][i]) {
+
+                // get the character representation of the block to be added
+                var typeInLevelArr = this.levels[this.currentLevelInd][i][j];
+
+                // skip over this block if it is an empty space in the level data and push a 0 to the level array
+                if (typeInLevelArr === " ") {
+                    this.currentLevel.push(0);
+                    continue;
+                }
+
+                // create the block
+                var b = new Block({
+                    x: j * BLOCK_SIZE, y: i * BLOCK_SIZE,
+                    w: BLOCK_SIZE, h: BLOCK_SIZE,
+                    type: blockTypes[typeInLevelArr],
+                });
+
+                // push it to the array to be used
+                this.currentLevel.push(b);
+            }
+        }
+    };
+
+    Level.prototype.runPlayer = function () {
+
+        // run the player
+        player.run();
+    };
+
+    Level.prototype.runLevel = function () {
+        // misc stuff in the level
+    };
+
+    Level.prototype.addLevel = function (levelData) {
+
+        // start at zero, whenever a larger row length is found in the data it will be updated to that
+        let sizeOfRow = 0;
+
+        // loop through all of the rows in the level
+        for (var i in levelData) {
+
+            // if the length of the current row is greater than the current longest found length update the size of row, otherwise do nothing
+            sizeOfRow = levelData[i].length > sizeOfRow ? levelData[i].length : sizeOfRow;
+        }
+
+        // loop through all of the rows again, this time were adding on to the shorter rows to make a nice neat rectangle
+        for (var i in levelData) {
+
+            // shortcut to the length of the current row
+            var len = levelData[i].length;
+
+            // if the length of the current row is shorter than the longest row perform a function to add spaces on to it until it is the right size
+            if (len < sizeOfRow) ((i) => {
+
+                // loop and make the row bigger until its as big as the biggest one
+                while(len < sizeOfRow) {
+
+                    // make it longer
+                    levelData[i] += " ";
+
+                    // update the variable
+                    len = levelData[i].length;
+                }
+            })(i);
+        }
+
+        // add the newly rectangular level data to the levels array
+        this.levels.push(levelData);
+    }
+
+    Level.prototype.run = function () {
+
+        //bacground
+        background(240);
+
+        // run all of the blocks in the level
+        this.runBlocks();
+
+        // run the player
+        this.runPlayer();
+
+        // check for winning and player dying and other misc
+        this.runLevel();
+    };
+
+    // create the level handeler object and then return it into the global 'level' variable
+    return new Level();
+})();
+
+level.addLevel([
+    "W",
+    "WW",
+    "WWWW",
+    "WWWW",
+    "WWWW",
+    "WWWWW",
+    "WWWWW          W",
+    "WWWWW",
+    "WWWRW               W",
+    "WW             B    W",
+    "WW          G  W    W",
+    "WWWRWWWWWWWWWWWWWWWWWWWWWWWWW",
+]);
+
+level.fillLevel();
+
+// scenes
+scenes = (function () {
+    let play = (function () {
+        function Play() {
+
+        }
+
+        Play.prototype.run = function () {
+            _camera.run();
+            pushMatrix();
+            translate(~~(-_camera.position.x + width/2 - player.dimensions.w/2), ~~(-_camera.position.y + height/2 - player.dimensions.h/2));
+            level.run();
+            popMatrix();
+        }
+
+        return new Play();
+    })();
+
+    return {
+        play: play,
+    };
+})();
+
+// draw function
+
+draw = function () {
+
+    scenes[scene].run();
+
+    click = false;
+}
+
+// user interactions
+
+keyPressed = () => {
+    keys[keyCode] = keys[key.toString().toLowerCase()] = true;
+}
+
+keyReleased = () => {
+    keys[keyCode] = keys[key.toString().toLowerCase()] = false;
+}
+
+mousePressed = () => {
+    click = true;
+}
+
+};};
+
+var canvas = document.querySelector("#mycanvas"); 
+var processingInstance = new Processing(canvas, programCode);}
+
+main();
+    </script>
+    <script></script>
+</html> 
