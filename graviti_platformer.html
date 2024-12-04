@@ -172,7 +172,6 @@ Box = (function () {
 Block = (function () {
     function Block(config) {
 
-
         Box.call(this, config);
 
         this.type = config.type.name;
@@ -189,11 +188,53 @@ Block = (function () {
         if (this.type === "color") this.colorName = config.type.colorName;
 
         // if its a wall block keep an array with objects showing the colors of its sides.
-        if (this.type === "wall") {            
+        if (this.type === "wall") {
+
             this.sideColors = [];
 
-            for (let i in config.neededColored) {
-                this.sideColors.push({color: "none", position: config.neededColored[i]});
+            for (let i in config.type.neededColored) {
+                this.sideColors.push({color: "none", position: config.type.neededColored[i]});
+            }
+
+            this.positionsOfColorables = [];
+
+            for (let i in this.sideColors) {
+
+                let direction = this.sides[this.sideColors[i].position];
+
+                let s = this.dimensions.w;
+
+                let center = vector.new(this.position.x + s/2, this.position.y + s/2);
+
+                let positions = {
+                    x: [],
+                    y: [],
+                };
+
+                let dirs = ["x", "y"];
+
+                for (let i in dirs) {
+
+                    let sign = Math.sign(direction[dirs[i]]);
+
+                    positions[dirs[i]].push(
+                        ~~(sign === 0 ? (center[dirs[i]] - s/2):(center[dirs[i]] + s/2 * sign)),
+                        ~~(sign === 0 ? (center[dirs[i]] + s/2):(center[dirs[i]] + s/2 * sign)),
+                        ~~(sign === 0 ? (center[dirs[i]] + s/4):(center[dirs[i]] + s/4 * sign)),
+                        ~~(sign === 0 ? (center[dirs[i]] - s/4):(center[dirs[i]] + s/4 * sign)));
+                    
+                }
+
+                if (config.neighborColors.right) {
+                    positions.x[2] += s/4;
+                }
+
+                if (config.neighborColors.left) {
+                    positions.x[3] -= s/4;
+                }
+
+                this.positionsOfColorables.push(positions);
+
             }
         };
     }
@@ -206,26 +247,19 @@ Block = (function () {
         rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
 
         if (this.type === "wall") {
-            for (let i in this.sideColors) {
+            for (let i in this.positionsOfColorables) {
 
-                let direction = this.sides[this.sideColors[i].position];
                 fill(colors[this.sideColors[i].color]);
+                
+                beginShape();
 
-                let center = vector.new(this.getCenter().x, this.getCenter().y);
+                for (let j in this.positionsOfColorables[i].x) {
+                    
+                    vertex(this.positionsOfColorables[i].x[j], this.positionsOfColorables[i].y[j]);
+                }
 
-                let xPositions = [
-                    center.x - this.dimensions.w/2 * Math.sign(direction.x),
-                    center.x + this.dimensions.w/2 * Math.sign(direction.x),
-                    center.x + this.dimensions.w/4 * Math.sign(direction.x),
-                    center.x - this.dimensions.w/4 * Math.sign(direction.x),
-                ];
+                endShape(CLOSE);
 
-                let yPositions = [
-                    center.y - this.dimensions.h/2 * Math.sign(direction.y),
-                    center.y + this.dimensions.h/2 * Math.sign(direction.y),
-                    center.y + this.dimensions.h/4 * Math.sign(direction.y),
-                    center.y - this.dimensions.h/4 * Math.sign(direction.y),
-                ];
             }
         }
     };
@@ -510,11 +544,48 @@ level = (function () {
                     continue;
                 }
 
+                let neighborColors = {
+                    "top": false,
+                    "left": false,
+                    "bottom": false,
+                    "right": false,
+                };
+
+                let indIn = (ind, iInd) => {
+
+                    if (iInd) {
+                        return ind >=0 && ind < this.levels[this.currentLevelInd].length;
+                    }
+
+                    return ind >=0 && ind < this.levels[this.currentLevelInd][i].length;
+                }
+
+                let type = blockTypes[typeInLevelArr];
+
+                if (type.name === "wall") {
+                    
+
+
+                    if (type.neededColored.includes("top")) {
+                        if (indIn(+j - 1) && blockTypes[this.levels[this.currentLevelInd][i][+j - 1]].neededColored.includes("top")) {
+                            neighborColors.left = true;
+                        }
+                        if (indIn(+j + 1) && blockTypes[this.levels[this.currentLevelInd][i][+j + 1]].neededColored.includes("top")) {
+                           
+                            neighborColors.right = true;
+                            log(neighborColors);
+                        }
+                    }
+                }
+
+
+
                 // create the block
                 var b = new Block({
                     x: j * BLOCK_SIZE, y: i * BLOCK_SIZE,
                     w: BLOCK_SIZE, h: BLOCK_SIZE,
                     type: blockTypes[typeInLevelArr],
+                    neighborColors: neighborColors,
                 });
 
                 // push it to the array to be used
@@ -617,7 +688,7 @@ level.addLevel([
     "WWWRW               W",
     "WW             B    W",
     "WW          G  W    W",
-    "WWWRWWWWW1WWWWWWWWWWWWWWWWWWW",
+    "WWWRWW1WW11111111111111111111111",
 ]);
 
 level.fillLevel();
