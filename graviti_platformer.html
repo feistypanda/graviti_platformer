@@ -431,21 +431,25 @@ player = (function () {
                         case "top":
 
                             this.friction = vector.new(this.frictionHorizontal, this.frictionVertical);
+                            _camera.lerpAmt = vector.new(_camera.lerpHorizontal, _camera.lerpVertical);
                             return vector.new(0, this.gravityPower);
 
                         case "bottom":
 
                             this.friction = vector.new(this.frictionHorizontal, this.frictionVertical);
+                            _camera.lerpAmt = vector.new(_camera.lerpHorizontal, _camera.lerpVertical);
                             return vector.new(0, -this.gravityPower);
 
                         case "left":
 
                             this.friction = vector.new(this.frictionVertical, this.frictionHorizontal);
+                            _camera.lerpAmt = vector.new(_camera.lerpVertical, _camera.lerpHorizontal);
                             return vector.new(this.gravityPower, 0);
 
                         case "right":
 
                             this.friction = vector.new(this.frictionVertical, this.frictionHorizontal);
+                            _camera.lerpAmt = vector.new(_camera.lerpVertical, _camera.lerpHorizontal);
                             return vector.new(-this.gravityPower, 0);
 
                         } 
@@ -564,39 +568,18 @@ _camera = (function () {
         this.maxDistanceFromTarget = 100;
         this.goodDistanceFromTarget = 50;
 
-        // this.goingTotargetX = false;
-        // this.goingTotargetY = false;
+        this.lerpHorizontal = 0.1;
+        this.lerpVertical = 0.05;
+        this.lerpAmt = vector.new(this.lerpHorizontal, this.lerpVertical);
     }
 
     Camera.prototype.run = function() {
-        // if (abs(this.target.position.x - this.position.x) > this.maxDistanceFromTarget) {
-        //     this.position.x = this.target.position.x - this.maxDistanceFromTarget * Math.sign(this.target.position.x - this.position.x);
-        //     // this.goingTotargetX = true;
-        // }
+        
+        // this.position.x = lerp(this.position.x, this.target.getCenter().x + (this.lerpAmt.x === this.lerpHorizontal? this.target.velocity.x * 20 : -100), this.lerpAmt.x);
+        // this.position.y = lerp(this.position.y, this.target.getCenter().y + (this.lerpAmt.x === this.lerpVertical? this.target.velocity.y * 20 : -100) , this.lerpAmt.y);
 
-        // if (abs(this.target.position.y - this.position.y) > this.maxDistanceFromTarget) {
-        //     this.position.y = this.target.position.y - this.maxDistanceFromTarget * Math.sign(this.target.position.y - this.position.y);
-        //     // this.goingTotargetY = true;
-        // }
-
-        this.position.x = lerp(this.position.x, this.target.getCenter().x + this.target.velocity.x * 20, 0.1);
-        this.position.y = lerp(this.position.y, this.target.getCenter().y - 100 , 0.05);
-
-        // if (this.goingTotargetX) {
-        //     this.position.x = lerp(this.position.x, this.target.getCenter().x, 0.1);
-
-        //     if (abs(this.position.x - this.target.getCenter().x) < 10) {
-        //         this.goingTotargetX = false;
-        //     } 
-        // }
-
-        // if (this.goingTotargetY) {
-        //     this.position.y = lerp(this.position.y, this.target.getCenter().y, 0.1);
-
-        //     if (abs(this.position.y - this.target.getCenter().y) < 10) {
-        //         this.goingTotargetY = false;
-        //     } 
-        // }
+        this.position.x = lerp(this.position.x, this.target.getCenter().x, this.lerpAmt.x);
+        this.position.y = lerp(this.position.y, this.target.getCenter().y, this.lerpAmt.y);
     };
 
     return new Camera(player);
@@ -836,13 +819,66 @@ level.fillLevel();
 scenes = (function () {
     let play = (function () {
         function Play() {
-
+            this.pastRotateAmt = 0;
+            this.rotateAmt = 0;
         }
 
         Play.prototype.run = function () {
             _camera.run();
+
+            if (player.gravity.x > 0) {
+                if (this.rotateAmt !== PI/2) {
+                    this.pastRotateAmt = this.rotateAmt;
+                }
+                this.rotateAmt = PI/2;
+            }
+            if (player.gravity.x < 0) {
+                if (this.rotateAmt !== PI*1.5) {
+                    this.pastRotateAmt = this.rotateAmt;
+                }
+                this.rotateAmt = PI*1.5;
+            }
+            if (player.gravity.y < 0) {
+                if (this.rotateAmt !== PI) {
+                    this.pastRotateAmt = this.rotateAmt;
+                }
+                this.rotateAmt = PI;
+            }
+            if (player.gravity.y > 0) {
+                if (this.rotateAmt !== 0) {
+                    this.pastRotateAmt = this.rotateAmt;
+                }
+                this.rotateAmt = 0;
+            }
+
             pushMatrix();
-            translate(~~(-_camera.position.x + width/2 - player.dimensions.w/2), ~~(-_camera.position.y + height/2 - player.dimensions.h/2));
+            if (this.rotateAmt === PI/2) {
+                translate(
+                    ~~(-(-_camera.position.y + height/2 - player.dimensions.h/2)), 
+                    ~~((-_camera.position.x + width/2 - player.dimensions.w/2))
+                    );
+            } else if (this.rotateAmt === PI*1.5) {
+                translate(
+                    ~~((-_camera.position.y + height/2 - player.dimensions.h/2)), 
+                    ~~(-(-_camera.position.x + width/2 - player.dimensions.w/2))
+                    );
+            } else if (this.rotateAmt === PI) {
+                translate(
+                    ~~(-(-_camera.position.x + width/2 - player.dimensions.w/2)), 
+                    ~~(-(-_camera.position.y + height/2 - player.dimensions.h/2))
+                    );
+            } else {
+                translate(
+                    ~~(-_camera.position.x + width/2 - player.dimensions.w/2), 
+                    ~~(-_camera.position.y + height/2 - player.dimensions.h/2)
+                    );
+            }
+            
+            translate(width/2, height/2);
+
+            rotate(this.rotateAmt);
+            
+            translate(-width/2, -height/2);
             level.run();
             popMatrix();
         }
