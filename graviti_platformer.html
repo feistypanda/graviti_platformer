@@ -169,6 +169,12 @@ Box = (function () {
     return Box;
 })();
 
+// colored sides need fix, neighboring colors to {
+    //top : {left: false, right: false},
+    //bottom : {left: false, right: false},
+    //left : {top: false, bottom: false},
+    //right : {top: false, bottom: false},
+//}
 Block = (function () {
     function Block(config) {
 
@@ -225,16 +231,31 @@ Block = (function () {
                     
                 }
 
-                if (config.neighborColors.right) {
-                    positions.x[2] += s/4;
-                }
+                ["top", "bottom"].forEach((k) => {
+                    if (this.sideColors[i].position === k) {
+                        if (config.neighborColors[k].right) {
+                            positions.x[2] += s/4;
+                        }
 
-                if (config.neighborColors.left) {
-                    positions.x[3] -= s/4;
-                }
+                        if (config.neighborColors[k].left) {
+                            positions.x[3] -= s/4;
+                        }
+                    }
+                });
+
+                ["left", "right"].forEach((k) => {
+                    if (this.sideColors[i].position === k) {
+                        if (config.neighborColors[k].bottom) {
+                            positions.y[2] += s/4;
+                        }
+
+                        if (config.neighborColors[k].top) {
+                            positions.y[3] -= s/4;
+                        }
+                    }
+                });
 
                 this.positionsOfColorables.push(positions);
-
             }
         };
     }
@@ -280,7 +301,7 @@ player = (function () {
 
         this.movementPower = 5.5;
 
-        this.gravity = 2.1;
+        this.gravity = 2.4;
         this.jumpPower = 27.3;
         this.canJump = false;
 
@@ -415,6 +436,10 @@ player = (function () {
 
         if ((keys[UP] || keys.w) && (this.canJump || this.coyoteFrames > 0)) {
             
+            if (this.coyoteFrames > 0) {
+                this.velocity.y = 0;
+            }
+
             this.canJump = false;
             this.coyoteFrames = 0;
 
@@ -467,7 +492,7 @@ _camera = (function () {
         // }
 
         this.position.x = lerp(this.position.x, this.target.getCenter().x + this.target.velocity.x * 20, 0.1);
-        this.position.y = lerp(this.position.y, this.target.getCenter().y - 100, 0.01);
+        this.position.y = lerp(this.position.y, this.target.getCenter().y - 100 , 0.05);
 
         // if (this.goingTotargetX) {
         //     this.position.x = lerp(this.position.x, this.target.getCenter().x, 0.1);
@@ -500,8 +525,6 @@ level = (function () {
 
         // array containing all of the block objects in the current level
         this.currentLevel = [];
-
-
     }
 
     Level.prototype.runBlocks = function () {
@@ -545,10 +568,10 @@ level = (function () {
                 }
 
                 let neighborColors = {
-                    "top": false,
-                    "left": false,
-                    "bottom": false,
-                    "right": false,
+                    top : {left: false, right: false},
+                    bottom : {left: false, right: false},
+                    left : {top: false, bottom: false},
+                    right : {top: false, bottom: false},
                 };
 
                 let indIn = (ind, iInd) => {
@@ -562,23 +585,52 @@ level = (function () {
 
                 let type = blockTypes[typeInLevelArr];
 
+                // if its a wall wind the neigbors
                 if (type.name === "wall") {
-                    
 
+                    ["top", "bottom"].forEach((k) => {
+                        if (type.neededColored.includes(k)) {
 
-                    if (type.neededColored.includes("top")) {
-                        if (indIn(+j - 1) && blockTypes[this.levels[this.currentLevelInd][i][+j - 1]].neededColored.includes("top")) {
-                            neighborColors.left = true;
+                            if (indIn(+j - 1)) {
+                                let targ = blockTypes[this.levels[this.currentLevelInd][i][+j - 1]];
+
+                                if (targ && targ.neededColored && targ.neededColored.includes(k)) {
+                                    neighborColors[k].left = true;
+                                }
+                            }
+                            if (indIn(+j + 1)) {
+                               
+                                let targ = blockTypes[this.levels[this.currentLevelInd][i][+j + 1]];
+
+                                if (targ && targ.neededColored && targ.neededColored.includes(k)) {
+                                    neighborColors[k].right = true;
+                                }
+                            }
                         }
-                        if (indIn(+j + 1) && blockTypes[this.levels[this.currentLevelInd][i][+j + 1]].neededColored.includes("top")) {
-                           
-                            neighborColors.right = true;
-                            log(neighborColors);
+                    });
+
+                    ["left", "right"].forEach((k) => {
+                        if (type.neededColored.includes(k)) {
+
+                            if (indIn(+i - 1)) {
+                                log(+i);
+                                let targ = blockTypes[this.levels[this.currentLevelInd][+i - 1][j]];
+
+                                if (targ && targ.neededColored && targ.neededColored.includes(k)) {
+                                    neighborColors[k].top = true;
+                                }
+                            }
+                            if (indIn(+i + 1)) {
+                               
+                                let targ = blockTypes[this.levels[this.currentLevelInd][+i + 1][j]];
+
+                                if (targ && targ.neededColored && targ.neededColored.includes(k)) {
+                                    neighborColors[k].bottom = true;
+                                }
+                            }
                         }
-                    }
+                    });
                 }
-
-
 
                 // create the block
                 var b = new Block({
@@ -685,10 +737,10 @@ level.addLevel([
     "WWWWW",
     "WWWWW          W",
     "WWWWW",
-    "WWWRW               W",
-    "WW             B    W",
-    "WW          G  W    W",
-    "WWWRWW1WW11111111111111111111111",
+    "WWWRW               9",
+    "WW             B    9",
+    "WW          G  W    9",
+    "WWWR6666111111111111W11111111111",
 ]);
 
 level.fillLevel();
