@@ -96,6 +96,10 @@ let vector = (function () {
         return vector.new(vec1.x - vec2.x, vec1.y - vec2.y);
     }
 
+    vector.clone = (vec) => {
+        return vector.new(vec.x, vec.y);
+    }
+
     return vector;
 })();
 
@@ -137,6 +141,15 @@ let Box, Block, player, level, scenes, _camera;
 Box = (function () {
 
     function Box(config) {
+
+        // sides
+        this.sides = {
+            "left": vector.new(-1, 0),
+            "right": vector.new(1, 0),
+            "top": vector.new(0, -1),
+            "bottom": vector.new(0, 1),
+        };
+
 
         // position
         this.position = {x: config.x, y: config.y};
@@ -182,13 +195,6 @@ Block = (function () {
 
         this.type = config.type.name;
         this.color = config.type.color;
-
-        this.sides = {
-            "left": vector.new(-1, 0),
-            "right": vector.new(1, 0),
-            "top": vector.new(0, -1),
-            "bottom": vector.new(0, 1),
-        };
 
         // if its a color block, store its color in this.colorName
         if (this.type === "color") this.colorName = config.type.colorName;
@@ -301,9 +307,14 @@ player = (function () {
 
         this.movementPower = 5.5;
 
-        this.gravity = 2.4;
+        this.gravityPower = 2.4;
+        this.gravity = vector.new(0, this.gravityPower);
         this.jumpPower = 27.3;
         this.canJump = false;
+
+        this.frictionHorizontal = 0.4;
+        this.frictionVertical = 0.999;
+        this.friction = vector.new(this.frictionHorizontal, this.frictionVertical);
 
         this.startingCoyoteTime = 4;
         this.coyoteFrames = this.startingCoyoteTime;
@@ -325,19 +336,20 @@ player = (function () {
 
         this.colorName = "none";
 
+        this.gravity = vector.new(0, this.gravityPower);
+
         this.velocity = vector.new(0, 0);
         this.position = vector.new(x, y);
-
     };
 
     Player.prototype.moveX = function () {
         this.position.x += this.velocity.x;
-        this.velocity.x *= 0.4;
+        this.velocity.x *= this.friction.x;
     };
 
     Player.prototype.moveY = function () {
         this.position.y += this.velocity.y;
-        this.velocity.y *= 0.999;
+        this.velocity.y *= this.friction.y;
     };
 
     Player.prototype.move = function () {
@@ -382,72 +394,148 @@ player = (function () {
         let direcs = ["x", "y"];
         let opositeDirec = direcs[(direcs.indexOf(direc) + 1)%direcs.length]
 
+        let toBeVelocity = vector.clone(this.velocity);
 
         for (let i in this.colidingWith) {
+
+            let sideOfCollision = (() => {
+                if (direc === "x") {
+                    if (this.velocity[direc] > 0) {
+                        return "left";
+                    } else if (this.velocity[direc] < 0) {
+                        return "right";
+                    }
+                } else if (direc === "y") {
+                    if (this.velocity[direc] > 0) {
+                        return "top";
+                    } else if (this.velocity[direc] < 0) {
+                        return "bottom";
+                    }
+                }
+            })();
 
             // shortcut to make less typing
             let b = this.colidingWith[i];
 
+            // get the center of the square on the axis that were coliding on
+            let center = this.getCenter()[opositeDirec];
+            let centerOver = (center > b.position[opositeDirec] && center < b.position[opositeDirec] + b.dimensions[direcToDimensionMap[opositeDirec]]);
+
             if (b.type === "color") {
 
-                // get the center of the square on the axis that were coliding on
-                let center = this.getCenter()[opositeDirec];
-
                 // if the center of the player is colliding or this is the only block were coliding with
-                if ((center > b.position[opositeDirec] && center < b.position[opositeDirec] + b.dimensions[direcToDimensionMap[opositeDirec]]) || this.colidingWith.length <= 1) {
+                if (centerOver || this.colidingWith.length <= 1) {
                     this.colorName = b.colorName;
+                    this.gravity = (() => {
+                        switch (sideOfCollision) {
+                        case "top":
+
+                            this.friction = vector.new(this.frictionHorizontal, this.frictionVertical);
+                            return vector.new(0, this.gravityPower);
+
+                        case "bottom":
+
+                            this.friction = vector.new(this.frictionHorizontal, this.frictionVertical);
+                            return vector.new(0, -this.gravityPower);
+
+                        case "left":
+
+                            this.friction = vector.new(this.frictionVertical, this.frictionHorizontal);
+                            return vector.new(this.gravityPower, 0);
+
+                        case "right":
+
+                            this.friction = vector.new(this.frictionVertical, this.frictionHorizontal);
+                            return vector.new(-this.gravityPower, 0);
+
+                        } 
+                    })();
                 }
             }
 
-            if (this.velocity[direc] > 0) {
+            if (b.type === "wall" && (centerOver || this.colidingWith.length <= 1)) {
+                // loop
+                b.sideColors.forEach((k, i) => {
 
-                if (direc === "y") {
+                    if (sideOfCollision === k.position) {
+                        b.sideColors[i].color = this.colorName;
+                    }
+                });
+            }
+
+            ["top", "bottom", "left", "right"].forEach((k) => {
+                if (sideOfCollision === k && (Math.sign(this.gravity.y) === -this.sides[k].y && Math.sign(this.gravity.x) === -this.sides[k].x)) {
                     // allow jumping because landed on top of a block
                     this.canJump = true;
                     this.coyoteFrames = this.startingCoyoteTime;
                 }
+            })
+
+            if (this.velocity[direc] > 0) {
 
                 this.position[direc] = b.position[direc] - this.dimensions[direcToDimensionMap[direc]];
-                this.velocity[direc] = 0;
+                toBeVelocity[direc] = 0;
 
             } else if (this.velocity[direc] < 0) {
 
                 this.position[direc] = b.position[direc] + b.dimensions[direcToDimensionMap[direc]];
-                this.velocity[direc] = 0;
+                toBeVelocity[direc] = 0;
 
             }
         }
 
+        this.velocity = toBeVelocity;
     };
 
     Player.prototype.update = function () {
 
         if (keys[LEFT] || keys.a) {
 
-            this.velocity.x -= this.movementPower;
+            this.velocity.x -= this.movementPower * Math.sign(this.gravity.y);
+            this.velocity.y += this.movementPower * Math.sign(this.gravity.x);
 
         }
 
         if (keys[RIGHT] || keys.d) {
 
-            this.velocity.x += this.movementPower;
+            this.velocity.x += this.movementPower * Math.sign(this.gravity.y);
+            this.velocity.y -= this.movementPower * Math.sign(this.gravity.x);
 
         }
 
-        if ((keys[UP] || keys.w) && (this.canJump || this.coyoteFrames > 0)) {
+        //  && (this.canJump || this.coyoteFrames > 0)
+
+        if ((keys[UP] || keys.w)) {
             
-            if (this.coyoteFrames > 0) {
-                this.velocity.y = 0;
+            
+
+            if (Math.sign(this.gravity.y) && (this.canJump || this.coyoteFrames > 0)) {
+
+                if (this.coyoteFrames > 0) {
+                    this.velocity.y = 0;
+                }
+
+                this.canJump = false;
+                this.coyoteFrames = 0;
+
+                this.velocity.y -= this.jumpPower * Math.sign(this.gravity.y);
             }
 
-            this.canJump = false;
-            this.coyoteFrames = 0;
+            if (Math.sign(this.gravity.x) && (this.canJump || this.coyoteFrames > 0)) {
 
-            this.velocity.y -= this.jumpPower;
+                if (this.coyoteFrames > 0) {
+                    this.velocity.x = 0;
+                }
+
+                this.canJump = false;
+                this.coyoteFrames = 0;
+                
+                this.velocity.x -= this.jumpPower * Math.sign(this.gravity.x);
+            }
 
         }
 
-        this.velocity.y += this.gravity;
+        this.velocity = vector.add(this.velocity, this.gravity);
 
         this.move();
         this.color = colors[this.colorName];
@@ -613,7 +701,6 @@ level = (function () {
                         if (type.neededColored.includes(k)) {
 
                             if (indIn(+i - 1)) {
-                                log(+i);
                                 let targ = blockTypes[this.levels[this.currentLevelInd][+i - 1][j]];
 
                                 if (targ && targ.neededColored && targ.neededColored.includes(k)) {
