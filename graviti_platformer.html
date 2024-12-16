@@ -100,6 +100,14 @@ let vector = (function () {
         return vector.new(vec.x, vec.y);
     }
 
+    vector.translate = (vec) => {
+        translate(vec.x, vec.y);
+    }
+
+    vector.lerp = (vec1, vec2, amt) => {
+        return vector.new(lerp(vec1.x, vec2.x, amt), lerp(vec1.y, vec2.y, amt));
+    }
+
     return vector;
 })();
 
@@ -205,7 +213,7 @@ Block = (function () {
             this.sideColors = [];
 
             for (let i in config.type.neededColored) {
-                this.sideColors.push({color: "none", position: config.type.neededColored[i]});
+                this.sideColors.push({color: "none", colorNeeded: config.colorNeeded, position: config.type.neededColored[i]});
             }
 
             this.positionsOfColorables = [];
@@ -277,6 +285,18 @@ Block = (function () {
             for (let i in this.positionsOfColorables) {
 
                 fill(colors[this.sideColors[i].color]);
+
+                if (this.sideColors[i].color === "none"){
+
+                    let c = colors[this.sideColors[i].colorNeeded];
+
+                    fill(
+                        red(c),
+                        green(c),
+                        blue(c),
+                        100
+                    );
+                }
                 
                 beginShape();
 
@@ -300,33 +320,59 @@ Block = (function () {
 
 player = (function () {
     function Player(config) {
+
+        // inherit from box
         Box.call(this, config);
 
+        // nickname, to be used as just a name ig
         this.nickname = "Player1";
+
+        // health of the player, maybe I'll add spikes or smth at some point
         this.health = 100;
 
+        // how powerfull is the horizontal movement
         this.movementPower = 5.5;
 
-        this.gravityPower = 2.4;
+        // the time it takes before you can jump twice so that if you hold down jump it isnt nauseating
+        this.jumpDelay = 0;
+
+        // the power of the gravity
+        this.gravityPower = 1.3;
+
+        // the vector of the gravity, is changed with the changing gravity
         this.gravity = vector.new(0, this.gravityPower);
-        this.jumpPower = 27.3;
+
+        // how hard can the player jump?
+        this.jumpPower = 19.7;
+
+        // so that you cant jump in midair
         this.canJump = false;
 
+        // horizontal and vertical friction, different so that the air dosent feel like honey when you jump
         this.frictionHorizontal = 0.4;
         this.frictionVertical = 0.999;
+
+        // friction vector, changes with the gravity. not actually a vector, just a way to keep track of the friction in different directions
         this.friction = vector.new(this.frictionHorizontal, this.frictionVertical);
 
+        // so that you can still jump right after falling off of a block
         this.startingCoyoteTime = 4;
         this.coyoteFrames = this.startingCoyoteTime;
 
+        // an array with all of the blocks the player is currently coliding with
         this.colidingWith = [];
 
+        // the color of the player
         this.colorName = "none";
     }
 
+    // inherit prototype
     Player.prototype = Object.create(Box.prototype);
 
     Player.prototype.reset = function(x, y) {
+
+        // reset everything
+
         this.canJump = false;
 
         this.startingCoyoteTime = 4;
@@ -343,33 +389,55 @@ player = (function () {
     };
 
     Player.prototype.moveX = function () {
+
+        // move x
         this.position.x += this.velocity.x;
+
+        // friction x
         this.velocity.x *= this.friction.x;
     };
 
     Player.prototype.moveY = function () {
+
+        // move y
         this.position.y += this.velocity.y;
+
+        // friction y
         this.velocity.y *= this.friction.y;
     };
 
     Player.prototype.move = function () {
 
+        // set the jumping to false, set to true later if on top of a block
         this.canJump = false;
+
+        // reduce the coyote frames, reset later if ontop of a block
         this.coyoteFrames --;
 
+        // do the collisions on each axis seperately to prevent glitches. so you move on the x axis and then check for colisions, then you move on the y axis and do the same
+
+        // move x
         this.moveX();
 
+        // check for colisions on the x axis directly after moving along the x axis
         this.colisions("x");
 
+        // move on the y axis
         this.moveY();
 
+        // check for colisions on the y axis directly after moving along the y axis
         this.colisions("y");
     };
 
     Player.prototype.colisions = function(direc) {
+
+        // check for colisions and fill the this.colidingWith array
         this.checkColisions();
 
+        // if were colliding with anything, resolve the colisions
         if (this.colidingWith.length > 0) {
+
+            // use the direc to communicate if these colisions are on the x or y axis
             this.resolveColisions(direc);
         }
     };
@@ -423,6 +491,7 @@ player = (function () {
 
             if (b.type === "color") {
 
+                // switch the gravity of the player, change the color of the player, and change the friction on the player and the camera speed
                 // if the center of the player is colliding or this is the only block were coliding with
                 if (centerOver || this.colidingWith.length <= 1) {
                     this.colorName = b.colorName;
@@ -458,10 +527,11 @@ player = (function () {
             }
 
             if (b.type === "wall" && (centerOver || this.colidingWith.length <= 1)) {
-                // loop
+                // loop through the colorable sides on the wall were colliding with
                 b.sideColors.forEach((k, i) => {
 
-                    if (sideOfCollision === k.position) {
+                    // if the side were looping over is the same side of the colision AND the color of the player is the color that this side needs to be
+                    if (sideOfCollision === k.position && this.colorName === b.sideColors[i].colorNeeded) {
                         b.sideColors[i].color = this.colorName;
                     }
                 });
@@ -493,6 +563,8 @@ player = (function () {
 
     Player.prototype.update = function () {
 
+        this.jumpDelay --;
+
         if (keys[LEFT] || keys.a) {
 
             this.velocity.x -= this.movementPower * Math.sign(this.gravity.y);
@@ -509,11 +581,11 @@ player = (function () {
 
         //  && (this.canJump || this.coyoteFrames > 0)
 
-        if ((keys[UP] || keys.w)) {
-            
-            
+        if ((keys[UP] || keys.w) && (this.canJump || this.coyoteFrames > 0) && this.jumpDelay <= 0) {  
 
-            if (Math.sign(this.gravity.y) && (this.canJump || this.coyoteFrames > 0)) {
+            this.jumpDelay = 10;
+
+            if (Math.sign(this.gravity.y)) {
 
                 if (this.coyoteFrames > 0) {
                     this.velocity.y = 0;
@@ -525,7 +597,7 @@ player = (function () {
                 this.velocity.y -= this.jumpPower * Math.sign(this.gravity.y);
             }
 
-            if (Math.sign(this.gravity.x) && (this.canJump || this.coyoteFrames > 0)) {
+            if (Math.sign(this.gravity.x)) {
 
                 if (this.coyoteFrames > 0) {
                     this.velocity.x = 0;
@@ -562,22 +634,23 @@ player = (function () {
 _camera = (function () {
     function Camera(target) {
 
+        // the subject of the camera, in this case its the player
         this.target = target;
+
+        // set the starting position of the camera to the position of the target (player)
         this.position = vector.new(this.target.getCenter().x, this.target.getCenter().y);
 
-        this.maxDistanceFromTarget = 100;
-        this.goodDistanceFromTarget = 50;
-
+        // the speeds at wich it lerps horizontally and vertically, they are different because you dont want jerky up and down
         this.lerpHorizontal = 0.1;
         this.lerpVertical = 0.05;
+
+        // the vector used to lerp
         this.lerpAmt = vector.new(this.lerpHorizontal, this.lerpVertical);
     }
 
     Camera.prototype.run = function() {
         
-        // this.position.x = lerp(this.position.x, this.target.getCenter().x + (this.lerpAmt.x === this.lerpHorizontal? this.target.velocity.x * 20 : -100), this.lerpAmt.x);
-        // this.position.y = lerp(this.position.y, this.target.getCenter().y + (this.lerpAmt.x === this.lerpVertical? this.target.velocity.y * 20 : -100) , this.lerpAmt.y);
-
+        // lerp the camera to the target
         this.position.x = lerp(this.position.x, this.target.getCenter().x, this.lerpAmt.x);
         this.position.y = lerp(this.position.y, this.target.getCenter().y, this.lerpAmt.y);
     };
@@ -628,16 +701,23 @@ level = (function () {
 
                 // skip over this block if it is an empty space in the level data and push a 0 to the level array
                 if (typeInLevelArr === " ") {
+
+                    // fill the 1d level array with a 0 to signify no block
                     this.currentLevel.push(0);
                     continue;
                 }
 
                 // skip if this is the square that the player spawns in
                 if (typeInLevelArr === "@") {
+
+                    // spawn the plalyer, also reset it
                     player.reset(j * BLOCK_SIZE, i * BLOCK_SIZE);
+
+                    // skip this block
                     continue;
                 }
 
+                // store the locations of neighboring needed colored sides
                 let neighborColors = {
                     top : {left: false, right: false},
                     bottom : {left: false, right: false},
@@ -645,32 +725,42 @@ level = (function () {
                     right : {top: false, bottom: false},
                 };
 
+                // function that checks if a indicie is in the level data
                 let indIn = (ind, iInd) => {
 
                     if (iInd) {
                         return ind >=0 && ind < this.levels[this.currentLevelInd].length;
                     }
-
                     return ind >=0 && ind < this.levels[this.currentLevelInd][i].length;
                 }
 
+                // get the block data for the block being checked
                 let type = blockTypes[typeInLevelArr];
 
-                // if its a wall wind the neigbors
+                // if its a wall wind the neigbors, this is so that the needed colord patches can combine
                 if (type.name === "wall") {
 
+                    // for both top and bottom
                     ["top", "bottom"].forEach((k) => {
+
+                        // check if the block has the side in its needed colored sides
                         if (type.neededColored.includes(k)) {
 
+                            // check to the left
                             if (indIn(+j - 1)) {
+
+                                // store the block that is to the left
                                 let targ = blockTypes[this.levels[this.currentLevelInd][i][+j - 1]];
 
                                 if (targ && targ.neededColored && targ.neededColored.includes(k)) {
                                     neighborColors[k].left = true;
                                 }
                             }
+
+                            // check to the right
                             if (indIn(+j + 1)) {
-                               
+                                
+                                // store the block that is to the right
                                 let targ = blockTypes[this.levels[this.currentLevelInd][i][+j + 1]];
 
                                 if (targ && targ.neededColored && targ.neededColored.includes(k)) {
@@ -680,18 +770,27 @@ level = (function () {
                         }
                     });
 
+                    // for both left and right
                     ["left", "right"].forEach((k) => {
+
+                        // check if the current side is used by the blocks needed colored sides
                         if (type.neededColored.includes(k)) {
 
+                            // check above the square
                             if (indIn(+i - 1)) {
+
+                                // store the block above to easier acess
                                 let targ = blockTypes[this.levels[this.currentLevelInd][+i - 1][j]];
 
                                 if (targ && targ.neededColored && targ.neededColored.includes(k)) {
                                     neighborColors[k].top = true;
                                 }
                             }
+
+                            // check below the block
                             if (indIn(+i + 1)) {
-                               
+                                
+                                // store the block below to easier acess
                                 let targ = blockTypes[this.levels[this.currentLevelInd][+i + 1][j]];
 
                                 if (targ && targ.neededColored && targ.neededColored.includes(k)) {
@@ -707,6 +806,7 @@ level = (function () {
                     x: j * BLOCK_SIZE, y: i * BLOCK_SIZE,
                     w: BLOCK_SIZE, h: BLOCK_SIZE,
                     type: blockTypes[typeInLevelArr],
+                    colorNeeded: "red",
                     neighborColors: neighborColors,
                 });
 
@@ -766,7 +866,7 @@ level = (function () {
     Level.prototype.run = function () {
 
         //bacground
-        background(240);
+        background(240, 200);
 
         // run all of the blocks in the level
         this.runBlocks();
@@ -780,6 +880,12 @@ level = (function () {
 
     // create the level handeler object and then return it into the global 'level' variable
     return new Level();
+})();
+
+levelEditor = (function() {
+    function LevelEditor () {
+        this.blocks = [];
+    }
 })();
 
 // "1": ["top"]
@@ -799,18 +905,34 @@ level = (function () {
 // @: spawn 
 
 level.addLevel([
-    "W",
-    "WW",
-    "WWWW",
-    "WWWW",
-    "WWWW@",
-    "WWWWW",
-    "WWWWW          W",
-    "WWWWW",
-    "WWWRW               9",
-    "WW             B    9",
-    "WW          G  W    9",
-    "WWWR6666111111111111W11111111111",
+    "  WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWGWWW",
+    "WWWWW                                W",
+    "W    W                                W",
+    "W WW W@ W                              W",
+    "W WW WWW                                W",
+    "W WW                                    W",
+    "W WWRWW          WW                     W",
+    "W WWWWW           W                     W",
+    "W WWRWW           W    9                W",
+    "W     W        WWWB    9                W",
+    "W WW          G        9                W",
+    "W WWWR66661111W11W1111WW1111111111WWWWWW",
+    "W                                W",
+    "W                                W",
+    "W                                W",
+    "W                                W",
+    "W  W",
+    "W1WW WWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "WWWW  W  W  3",
+    "WWWW  W",
+    "WWWW  W",
+    "WWWW  W",
+    "WWWW  W",
+    "WWWW  W",
+    "WWWW  W",
+    "WWWW  W",
+    "WWWW   ",
+    "WWWWWWWW",
 ]);
 
 level.fillLevel();
@@ -821,62 +943,100 @@ scenes = (function () {
         function Play() {
             this.pastRotateAmt = 0;
             this.rotateAmt = 0;
+            this.rotateLerp = 1;
         }
 
-        Play.prototype.run = function () {
-            _camera.run();
+        Play.prototype.calcRotate = function () {
+            this.rotateLerp = min(this.rotateLerp + 0.12, 1);
 
             if (player.gravity.x > 0) {
                 if (this.rotateAmt !== PI/2) {
                     this.pastRotateAmt = this.rotateAmt;
+                    this.rotateLerp = 0;
                 }
                 this.rotateAmt = PI/2;
             }
             if (player.gravity.x < 0) {
                 if (this.rotateAmt !== PI*1.5) {
                     this.pastRotateAmt = this.rotateAmt;
+                    this.rotateLerp = 0;
                 }
                 this.rotateAmt = PI*1.5;
             }
             if (player.gravity.y < 0) {
                 if (this.rotateAmt !== PI) {
                     this.pastRotateAmt = this.rotateAmt;
+                    this.rotateLerp = 0;
                 }
                 this.rotateAmt = PI;
             }
             if (player.gravity.y > 0) {
                 if (this.rotateAmt !== 0) {
                     this.pastRotateAmt = this.rotateAmt;
+                    this.rotateLerp = 0;
                 }
                 this.rotateAmt = 0;
             }
+        };
 
-            pushMatrix();
-            if (this.rotateAmt === PI/2) {
-                translate(
-                    ~~(-(-_camera.position.y + height/2 - player.dimensions.h/2)), 
-                    ~~((-_camera.position.x + width/2 - player.dimensions.w/2))
-                    );
-            } else if (this.rotateAmt === PI*1.5) {
-                translate(
-                    ~~((-_camera.position.y + height/2 - player.dimensions.h/2)), 
-                    ~~(-(-_camera.position.x + width/2 - player.dimensions.w/2))
-                    );
-            } else if (this.rotateAmt === PI) {
-                translate(
-                    ~~(-(-_camera.position.x + width/2 - player.dimensions.w/2)), 
-                    ~~(-(-_camera.position.y + height/2 - player.dimensions.h/2))
-                    );
-            } else {
-                translate(
-                    ~~(-_camera.position.x + width/2 - player.dimensions.w/2), 
-                    ~~(-_camera.position.y + height/2 - player.dimensions.h/2)
-                    );
+        Play.prototype.doRotate = function () {
+
+            let pastRotate = this.pastRotateAmt;
+            let curRotate = this.rotateAmt;
+
+            if (curRotate - pastRotate < -PI) {
+
+                log("hello");
+                pastRotate -= TWO_PI;
+
+            } else if (pastRotate - curRotate< -PI) {
+
+                pastRotate += TWO_PI;
+
             }
+
+            rotate(lerp(pastRotate, curRotate, this.rotateLerp));
+        };
+
+        Play.prototype.translateWithRotate = function() {
+
+            // all of the different translation ammounts
+            let coord1 = ~~(-(-_camera.position.y + height/2 - player.dimensions.h/2));
+            let coord2 = ~~(-_camera.position.x + width/2 - player.dimensions.w/2);
+            let coord3 = ~~(-_camera.position.y + height/2 - player.dimensions.h/2);
+            let coord4 = ~~(-(-_camera.position.x + width/2 - player.dimensions.w/2));
+
+            // mish max the values in a way that works
+            let translate1 = vector.new(coord1, coord2);
+            let translate2 = vector.new(coord3, coord4);
+            let translate3 = vector.new(coord4, coord1);
+            let translate4 = vector.new(coord2, coord3);
+
+            // for each direction
+            let translateMap = {
+                1.5707963267948966: translate1,
+                4.71238898038469:   translate2,
+                3.141592653589793:  translate3,
+                0:                  translate4,
+            };
+
+            // lerp between now and last for smooth rotate
+            vector.translate(vector.lerp(translateMap[this.rotateAmt], translateMap[this.pastRotateAmt], 1 - this.rotateLerp));
+        };
+
+        Play.prototype.run = function () {
+            _camera.run();
+
+            this.calcRotate();
+            
+            pushMatrix();
+
+            // translate so its still centered with the rotation
+            this.translateWithRotate();            
             
             translate(width/2, height/2);
 
-            rotate(this.rotateAmt);
+            this.doRotate();
             
             translate(-width/2, -height/2);
             level.run();
