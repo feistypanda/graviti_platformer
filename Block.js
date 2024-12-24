@@ -1,3 +1,5 @@
+
+// the blocks in the level
 Block = (function () {
     function Block(config) {
 
@@ -78,9 +80,45 @@ Block = (function () {
 
     Block.prototype = Object.create(Box.prototype);
 
+    Block.prototype.display = function () {
+        noStroke();
+        fill(this.color);
+        rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
+
+        if (this.type === "wall") {
+            for (let i in this.positionsOfColorables) {
+
+                fill(colors[this.sideColors[i].color]);
+
+                if (this.sideColors[i].color === "none"){
+
+                    let c = colors[this.sideColors[i].colorNeeded];
+
+                    fill(
+                        red(c),
+                        green(c),
+                        blue(c),
+                        100
+                    );
+                }
+                
+                beginShape();
+
+                for (let j in this.positionsOfColorables[i].x) {
+                    
+                    vertex(this.positionsOfColorables[i].x[j], this.positionsOfColorables[i].y[j]);
+                }
+
+                endShape(CLOSE);
+
+            }
+        }
+};
+
     Block.prototype.update = function () {
 
     };
 
     return Block;
 })();
+

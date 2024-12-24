@@ -4,6 +4,14 @@ function lerp(a, b, t) {
     return (a + (b-a) * t);
 }
 
+// shortcut to console.log
+
+let log = (message) => {
+    console.log(message);
+}
+
+// function min = Math.min;
+
 let utilities = (function () {
     return {
         AABB: function(thing1, thing2) {
