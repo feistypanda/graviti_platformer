@@ -1,3 +1,5 @@
+
+// the code that handles the storage and usage of levels
 level = (function () {
     function Level() {
 
@@ -77,7 +79,7 @@ level = (function () {
                 // get the block data for the block being checked
                 let type = blockTypes[typeInLevelArr];
 
-                // if its a wall wind the neigbors, this is so that the needed colord patches can combine
+                // if its a wall find the neigbors, this is so that the needed colord patches can combine
                 if (type.name === "wall") {
 
                     // for both top and bottom
@@ -146,7 +148,7 @@ level = (function () {
                     x: j * BLOCK_SIZE, y: i * BLOCK_SIZE,
                     w: BLOCK_SIZE, h: BLOCK_SIZE,
                     type: blockTypes[typeInLevelArr],
-                    colorNeeded: "red",
+                    colorNeeded: ["red", "green", "blue", "red"],
                     neighborColors: neighborColors,
                 });
 

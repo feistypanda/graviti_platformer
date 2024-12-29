@@ -48,13 +48,6 @@ Player = (function () {
         this.colorName = "none";
     }
 
-    Player.prototype.display = function () {
-        noStroke();
-        fill(this.color);
-        rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
-    };
-
-
     // inherit prototype
     Player.prototype = Object.create(Box.prototype);
 

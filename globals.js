@@ -20,8 +20,10 @@ let scene = 'play';
 // player data
 let playerData = {
     x: 200, y: 200,
-    w: BLOCK_SIZE * 0.8, h: BLOCK_SIZE*0.8,
+    w: BLOCK_SIZE * 0.8, h: BLOCK_SIZE * 0.8,
 };
+
+let globalMouseX, globalMouseY;
 
 // colors
 let colors = {

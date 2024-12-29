@@ -10,8 +10,6 @@ let log = (message) => {
     console.log(message);
 }
 
-// function min = Math.min;
-
 let utilities = (function () {
     return {
         AABB: function(thing1, thing2) {

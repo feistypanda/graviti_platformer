@@ -12,47 +12,49 @@ frameRate(60);
 
 
 // constructors
+
+// player display function because the drawing stuff dosent work outside of the pjs environment
 Player.prototype.display = function () {
-        noStroke();
-        fill(this.color);
-        rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
-    };
+    noStroke();
+    fill(this.color);
+    rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
+};
 
-
+// player display function because the drawing stuff dosent work outside of the pjs environment
 Block.prototype.display = function () {
-        noStroke();
-        fill(this.color);
-        rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
+    noStroke();
+    fill(this.color);
+    rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
 
-        if (this.type === "wall") {
-            for (let i in this.positionsOfColorables) {
+    if (this.type === "wall") {
+        for (let i in this.positionsOfColorables) {
 
-                fill(colors[this.sideColors[i].color]);
+            fill(colors[this.sideColors[i].color]);
 
-                if (this.sideColors[i].color === "none"){
+            if (this.sideColors[i].color === "none"){
 
-                    let c = colors[this.sideColors[i].colorNeeded];
+                let c = colors[this.sideColors[i].colorNeeded];
 
-                    fill(
-                        red(c),
-                        green(c),
-                        blue(c),
-                        100
-                    );
-                }
-                
-                beginShape();
-
-                for (let j in this.positionsOfColorables[i].x) {
-                    
-                    vertex(this.positionsOfColorables[i].x[j], this.positionsOfColorables[i].y[j]);
-                }
-
-                endShape(CLOSE);
-
+                fill(
+                    red(c),
+                    green(c),
+                    blue(c),
+                    100
+                );
             }
+            
+            beginShape();
+
+            for (let j in this.positionsOfColorables[i].x) {
+                
+                vertex(this.positionsOfColorables[i].x[j], this.positionsOfColorables[i].y[j]);
+            }
+
+            endShape(CLOSE);
+
         }
-    };
+    }
+};
 
 
 player = new Player(playerData);
@@ -76,6 +78,7 @@ function scenes() {
             this.rotateLerp = min(this.rotateLerp + 0.12, 1);
 
             if (player.gravity.x > 0) {
+                // if the rotation the previos frame isnt the rotation that the gravity indicates
                 if (this.rotateAmt !== PI/2) {
                     this.pastRotateAmt = this.rotateAmt;
                     this.rotateLerp = 0;
@@ -139,10 +142,10 @@ function scenes() {
 
             // for each direction
             let translateMap = {
-                1.5707963267948966: translate1,
-                4.71238898038469:   translate2,
-                3.141592653589793:  translate3,
-                0:                  translate4,
+                1.5707963267948966: translate1, // PI/2
+                4.71238898038469:   translate2, // PI * 1.5
+                3.141592653589793:  translate3, // PI
+                0:                  translate4, // 0
             };
 
             // lerp between now and last for smooth rotate
@@ -187,6 +190,8 @@ scenes = scenes();
 // draw function
 
 draw = function () {
+    globalMouseX = mouseX;
+    globalMouseY = mouseY;
 
     scenes[scene].run();
 
