@@ -33,13 +33,13 @@ level = (function () {
         // convert the level data into an array of block objects
 
         // loop through all of the rows in the level to be used
-        for (var i in this.levels[this.currentLevelInd]) {
+        for (let i in this.levels[this.currentLevelInd]) {
 
             // loop through all of the data in the row currently being looped through
-            for (var j in this.levels[this.currentLevelInd][i]) {
+            for (let j in this.levels[this.currentLevelInd][i]) {
 
                 // get the character representation of the block to be added
-                var typeInLevelArr = this.levels[this.currentLevelInd][i][j];
+                let typeInLevelArr = this.levels[this.currentLevelInd][i][j];
 
                 // skip over this block if it is an empty space in the level data and push a 0 to the level array
                 if (typeInLevelArr === " ") {
@@ -78,6 +78,8 @@ level = (function () {
 
                 // get the block data for the block being checked
                 let type = blockTypes[typeInLevelArr];
+
+                if (typeof typeInLevelArr !== "string") type = typeInLevelArr;
 
                 // if its a wall find the neigbors, this is so that the needed colord patches can combine
                 if (type.name === "wall") {
@@ -143,11 +145,15 @@ level = (function () {
                     });
                 }
 
+                let info = utilities.copyObj(typeInLevelArr);
+
+                // info.x = j * BLOCK_SIZE, info.y = i * BLOCK_SIZE, w: BLOCK_SIZE, h: BLOCK_SIZE
+
                 // create the block
                 var b = new Block({
                     x: j * BLOCK_SIZE, y: i * BLOCK_SIZE,
                     w: BLOCK_SIZE, h: BLOCK_SIZE,
-                    type: blockTypes[typeInLevelArr],
+                    type: typeInLevelArr,
                     colorNeeded: ["red", "green", "blue", "red"],
                     neighborColors: neighborColors,
                 });

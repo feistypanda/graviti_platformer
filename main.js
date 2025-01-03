@@ -61,7 +61,8 @@ player = new Player(playerData);
 
 _camera = new Camera(player);
 
-level.addLevel(levelData[0]);
+level.addLevel(levelData[1]);
+console.log(levelData[1]);
 
 level.fillLevel();
 

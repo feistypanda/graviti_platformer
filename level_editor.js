@@ -4,37 +4,156 @@ levelEditor = (function() {
     function LevelEditor () {
         this.blocks = [];
         this.offset = vector.new(0, 0);
+
+        // the list of the different block types to cycle through
+        this.typesOfBlocks = ["W", "C", "Erase"];
+
+        // the index of the type of block that is currently selected in the block types array
+        this.currentBlock = 1;
+
+        // the display pannel
+        this.pannelY = 520;
     }
 
-    /**
-     * this function pushes a block to the array holding all of the (unsorted) blocks
-     * @param config {object} this config object holds all of the info for creating the new block
-    **/
-    LevelEditor.prototype.add = function (config) {
-        this.blocks.push(config);
+    // function to find the coordinates of the block where the mouse is
+    LevelEditor.prototype.findBlockCoords = function () {
+        // shortcuts
+        let type = this.typesOfBlocks[this.currentBlock];
+        let [mouseX, mouseY] = [globalMouseX, globalMouseY];
+
+        // calculate the x and y of the new block based off of the coordinates of the mouse
+        let [x, y] = [mouseX - mouseX % BLOCK_SIZE, mouseY - mouseY % BLOCK_SIZE]
+        
+        // because of the shifting camera, the mouse can go into negative coordinates which messes up the modulo, so this is to correct the error
+        if (mouseX < 0) x -= BLOCK_SIZE;
+        if (mouseY < 0) y -= BLOCK_SIZE;
+
+        // return the variables
+        return [x, y, type];
+    };
+
+    // function to add a block where the mouse is
+    LevelEditor.prototype.add = function () {
+
+        // get the x and y of the block where the mouse is and the type of block to add
+        [x, y, type] = [...this.findBlockCoords()];
+
+        // remove all blocks already at this coordinate so that we dont get overlapment
+        this.blocks = this.blocks.filter(k => k.x !== x || k.y !== y);
+
+        // if the eraser is selected then dont push anything
+        if (type !== "Erase") {
+
+            let infoOfBlock = utilities.copyObj(blockTypes[type])
+
+            // the information for the new block that we are creating
+            let info = {...infoOfBlock, x, y};
+
+            // push a new block. the information is changed based off of which type of block is being added
+            this.blocks.push(info);
+        }
     }
+
+    // function to edit a block where the mouse is
+    LevelEditor.prototype.edit = function() {
+
+        // get the x and y of the block where the mouse is
+        [x, y] = [...this.findBlockCoords()];
+
+        // see if there is a block at these coordinates, if there is then get the data of that block
+        let blockIndex = this.blocks.findIndex(k => "" + k.x + k.y === "" + x + y);
+
+        // block not found
+        if (blockIndex < 0) return;
+        let block = this.blocks[blockIndex];
+
+        switch (block.name) {
+        case "wall":
+            // first find out which part of the block was right clicked on
+            let clickedSide;
+            let [mouseX, mouseY] = [globalMouseX, globalMouseY];
+            let [x, y, w, h] = [block.x, block.y, BLOCK_SIZE, BLOCK_SIZE];
+            let [cx, cy] = [x + w/2, y + h/2];
+
+            if (utilities.pointToTri({x: mouseX, y: mouseY}, {x1: x, y1: y, x2: x + w, y2: y, x3: cx, y3: cy})) {
+                clickedSide = "top";
+            }// top
+            if (utilities.pointToTri({x: mouseX, y: mouseY}, {x1: x, y1: y, x2: x, y2: y + h, x3: cx, y3: cy})) {
+                clickedSide = "left";
+            } // left
+            if (utilities.pointToTri({x: mouseX, y: mouseY}, {x1: x + w, y1: y, x2: x + w, y2: y + h, x3: cx, y3: cy})) {
+                clickedSide = "right";
+            } // right
+            if (utilities.pointToTri({x: mouseX, y: mouseY}, {x1: x, y1: y + h, x2: x + w, y2: y + h, x3: cx, y3: cy})) {
+                clickedSide = "bottom";
+            } // bottom
+
+            let index = block.neededColored.indexOf(clickedSide);
+
+            // now add a needed color
+            if (index < 0) {
+
+                block.neededColored.push(clickedSide);
+                block.colorNeeded.push("none");
+            }
+            // if that side already exists, change it
+            else {
+                let colorNameList = Object.keys(colors);
+                let colorValueList = Object.values(colors);
+                let newColorName = colorNameList[(colorNameList.indexOf(block.colorNeeded[index]) + 1) % colorNameList.length];
+                block.colorNeeded[index] = newColorName;
+
+            }
+
+            break;
+        case "color":
+            // change the color of the color block
+            let colorNameList = Object.keys(colors);
+            let colorValueList = Object.values(colors);
+            let newColorName = colorNameList[(colorNameList.indexOf(block.colorName) + 1) % colorNameList.length];
+
+            block.colorName = newColorName;
+            block.color = colors[newColorName];
+
+            break;
+        }
+    }; 
 
     LevelEditor.prototype.update = function() {
+
+        // the mouse is clicked, either add or edit blocks
         if (click) {
 
-            let [x, y] = [globalMouseX - globalMouseX % BLOCK_SIZE, globalMouseY - globalMouseY % BLOCK_SIZE]
+            // if the mouse is being left clicked then add a block, otherwise if its a right click edit a block
+            switch (globalMouseButton) {
 
-            this.blocks = this.blocks.filter(k => k.x !== x || k.y !== y);
+            // left click
+            case LEFT:
+                this.add();
+                break;
 
-            this.add({
-                x, y,
-                w: BLOCK_SIZE, h: BLOCK_SIZE,
-                type: "W",
-                name: "wall",
-                color: -3618616,
-                neededColored: [],
-            });
+            // right click
+            case RIGHT:
+                this.edit();
+                break;
+            }
+            
         }
 
         // if the space bar is pressed then log the info
-        if(keys[" "]) {
-            this.log();
-        }
+        if(keys[" "]) this.log();
+
+        // if the c key is pressed cycle through the blocks
+        if (keys.c) this.currentBlock = (this.currentBlock + 1) % this.typesOfBlocks.length;
+
+        // we only want it to trigger once, so set the key to false
+        keys.c = false; 
+
+        // if the arrow keys are pressed, shift the view
+        if(keys[UP]) this.offset.y -= 5;
+        if(keys[DOWN]) this.offset.y += 5;
+        if(keys[LEFT]) this.offset.x -= 5;
+        if(keys[RIGHT]) this.offset.x += 5;
     };
 
     LevelEditor.prototype.run = function () {
@@ -152,7 +271,7 @@ levelEditor = (function() {
         }
 
         // log the info so that it can be saved
-        console.log(data);
+        console.log(JSON.stringify(data));
     }
 
     // create a level editor that can be used
