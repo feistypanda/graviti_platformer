@@ -37,7 +37,9 @@ let colors = {
 
 let blockTypes = (function () {
     return {
+
         "W": {name: "wall", color: -3618616, neededColored: [], colorNeeded: []},
+        "@": {name: "spawn", color: 854916961},
         "1": {name: "wall", color: -3618616, neededColored: ["top"], colorNeeded: []},
         "2": {name: "wall", color: -3618616, neededColored: ["left"], colorNeeded: []},
         "3": {name: "wall", color: -3618616, neededColored: ["bottom"], colorNeeded: []},

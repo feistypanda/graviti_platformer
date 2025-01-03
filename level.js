@@ -38,6 +38,8 @@ level = (function () {
             // loop through all of the data in the row currently being looped through
             for (let j in this.levels[this.currentLevelInd][i]) {
 
+                i = +i, j = +j;
+
                 // get the character representation of the block to be added
                 let typeInLevelArr = this.levels[this.currentLevelInd][i][j];
 
@@ -50,7 +52,7 @@ level = (function () {
                 }
 
                 // skip if this is the square that the player spawns in
-                if (typeInLevelArr === "@") {
+                if (typeInLevelArr.name === "spawn") {
 
                     // spawn the plalyer, also reset it
                     player.reset(j * BLOCK_SIZE, i * BLOCK_SIZE);
@@ -58,6 +60,8 @@ level = (function () {
                     // skip this block
                     continue;
                 }
+
+                // if (typeInLevelArr) continue;
 
                 // store the locations of neighboring needed colored sides
                 let neighborColors = {
@@ -94,7 +98,7 @@ level = (function () {
                             if (indIn(+j - 1)) {
 
                                 // store the block that is to the left
-                                let targ = blockTypes[this.levels[this.currentLevelInd][i][+j - 1]];
+                                let targ = this.levels[this.currentLevelInd][i][+j - 1];
 
                                 if (targ && targ.neededColored && targ.neededColored.includes(k)) {
                                     neighborColors[k].left = true;
@@ -105,7 +109,7 @@ level = (function () {
                             if (indIn(+j + 1)) {
                                 
                                 // store the block that is to the right
-                                let targ = blockTypes[this.levels[this.currentLevelInd][i][+j + 1]];
+                                let targ = this.levels[this.currentLevelInd][i][+j + 1];
 
                                 if (targ && targ.neededColored && targ.neededColored.includes(k)) {
                                     neighborColors[k].right = true;
@@ -121,10 +125,10 @@ level = (function () {
                         if (type.neededColored.includes(k)) {
 
                             // check above the square
-                            if (indIn(+i - 1)) {
+                            if (indIn(+i - 1, true)) {
 
                                 // store the block above to easier acess
-                                let targ = blockTypes[this.levels[this.currentLevelInd][+i - 1][j]];
+                                let targ = this.levels[this.currentLevelInd][+i - 1][j];
 
                                 if (targ && targ.neededColored && targ.neededColored.includes(k)) {
                                     neighborColors[k].top = true;
@@ -132,10 +136,10 @@ level = (function () {
                             }
 
                             // check below the block
-                            if (indIn(+i + 1)) {
+                            if (indIn(+i + 1, true)) {
                                 
                                 // store the block below to easier acess
-                                let targ = blockTypes[this.levels[this.currentLevelInd][+i + 1][j]];
+                                let targ = this.levels[this.currentLevelInd][+i + 1][j];
 
                                 if (targ && targ.neededColored && targ.neededColored.includes(k)) {
                                     neighborColors[k].bottom = true;
@@ -147,16 +151,14 @@ level = (function () {
 
                 let info = utilities.copyObj(typeInLevelArr);
 
-                // info.x = j * BLOCK_SIZE, info.y = i * BLOCK_SIZE, w: BLOCK_SIZE, h: BLOCK_SIZE
+                info.x = j * BLOCK_SIZE; 
+                info.y = i * BLOCK_SIZE;
+                info.w = BLOCK_SIZE;
+                info.h = BLOCK_SIZE;
+                info.neighborColors = neighborColors;
 
                 // create the block
-                var b = new Block({
-                    x: j * BLOCK_SIZE, y: i * BLOCK_SIZE,
-                    w: BLOCK_SIZE, h: BLOCK_SIZE,
-                    type: typeInLevelArr,
-                    colorNeeded: ["red", "green", "blue", "red"],
-                    neighborColors: neighborColors,
-                });
+                var b = new Block(info);
 
                 // push it to the array to be used
                 this.currentLevel.push(b);
@@ -199,7 +201,7 @@ level = (function () {
                 while(len < sizeOfRow) {
 
                     // make it longer
-                    levelData[i] += " ";
+                    levelData[i].push(" ");
 
                     // update the variable
                     len = levelData[i].length;

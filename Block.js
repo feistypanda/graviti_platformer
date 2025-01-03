@@ -5,19 +5,19 @@ Block = (function () {
 
         Box.call(this, config);
 
-        this.type = config.type.name;
-        this.color = config.type.color;
+        this.type = config.name;
+        this.color = config.color;
 
         // if its a color block, store its color in this.colorName
-        if (this.type === "color") this.colorName = config.type.colorName;
+        if (this.type === "color") this.colorName = config.colorName;
 
         // if its a wall block keep an array with objects showing the colors of its sides.
         if (this.type === "wall") {
 
             this.sideColors = [];
 
-            for (let i in config.type.neededColored) {
-                this.sideColors.push({color: "none", colorNeeded: config.colorNeeded[i], position: config.type.neededColored[i]});
+            for (let i in config.neededColored) {
+                this.sideColors.push({color: "none", colorNeeded: config.colorNeeded[i], position: config.neededColored[i]});
             }
 
             this.positionsOfColorables = [];

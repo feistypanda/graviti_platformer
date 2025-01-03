@@ -6,7 +6,7 @@ levelEditor = (function() {
         this.offset = vector.new(0, 0);
 
         // the list of the different block types to cycle through
-        this.typesOfBlocks = ["W", "C", "Erase"];
+        this.typesOfBlocks = ["W", "C", "Erase", "@"];
 
         // the index of the type of block that is currently selected in the block types array
         this.currentBlock = 1;
@@ -247,6 +247,10 @@ levelEditor = (function() {
 
                 for (let j = 0; j < (k.x - previos.x)/BLOCK_SIZE - 1; j++) {
                     // actually pushing the space
+                    rowSymbols.push(" ");
+                }
+
+                if ((k.x - previos.x)/BLOCK_SIZE - 1 === 0 && !i) {
                     rowSymbols.push(" ");
                 }
 
