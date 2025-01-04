@@ -76,6 +76,14 @@ Player = (function () {
 
         this.velocity = vector.new(0, 0);
         this.position = vector.new(x, y);
+
+        // reset the rotation
+
+        if (scenesExists) {
+            scenes.play.pastRotateAmt = 0;
+            scenes.play.rotateAmt = 0;
+            scenes.play.rotateLerp = 1;
+        }
     };
 
     Player.prototype.moveX = function () {
@@ -297,7 +305,7 @@ Player = (function () {
 
         //  && (this.canJump || this.coyoteFrames > 0)
 
-        if ((keys[UP] || keys.w) && (this.canJump || this.coyoteFrames > 0) && this.jumpDelay <= 0) {  
+        if ((keys[UP] || keys.w) && (this.canJump || this.coyoteFrames > 0) && this.jumpDelay <= 0 && levelTransition.amt >= 1) {  
 
             this.jumpDelay = 10;
 

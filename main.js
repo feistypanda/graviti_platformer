@@ -10,16 +10,8 @@ size(600, 600);
 smooth();
 frameRate(60);
 
-
-// constructors
-
-// player display function because the drawing stuff dosent work outside of the pjs environment
-Player.prototype.display = function () {
-    noStroke();
-    fill(this.color);
-    rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
-};
-
+// block stuff
+(function() {
 // player display function because the drawing stuff dosent work outside of the pjs environment
 Block.prototype.display = function () {
     noStroke();
@@ -55,11 +47,28 @@ Block.prototype.display = function () {
         }
     }
 };
+})();
+    
+// player stuff
+(function() {
 
+// player display function because the drawing stuff dosent work outside of the pjs environment
+Player.prototype.display = function () {
+    noStroke();
+    fill(this.color);
+    rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
+};
 
 player = new Player(playerData);
+})();
 
+// camera stuff
+(function() {
 _camera = new Camera(player);
+})();
+
+// level stuff
+(function() {
 
 level.displayStuff = function() {
     fill(0, 0, 0);
@@ -72,6 +81,7 @@ level.displayStuff = function() {
     this.displayProgress(300, 100, color(200, 100, 100), color(100, 200, 100), color(100, 100, 200), amt1, amt2, amt3);
 };
 
+// for the progress ring
 let g = createGraphics(600, 600, P2D);
 
 level.displayProgress = function(x, y, color1, color2, color3, amt1, amt2, amt3) {
@@ -90,7 +100,7 @@ level.displayProgress = function(x, y, color1, color2, color3, amt1, amt2, amt3)
     g.stroke(color3);
     g.arc(200, 200, 50, 50, amt2 * TWO_PI - PI/2, amt3 * TWO_PI - PI/2);
     
-    g.stroke(200);
+    g.stroke(150);
     g.arc(200, 200, 50, 50, amt3 * TWO_PI - PI/2, 1.5 * PI);
 
     let filling = g.get(170, 170, 60, 60);
@@ -106,7 +116,6 @@ level.displayProgress = function(x, y, color1, color2, color3, amt1, amt2, amt3)
     }
 
     image(filling, x - 30, y - 30);
-
 }
 
 for (let i in levelData) {
@@ -114,9 +123,24 @@ for (let i in levelData) {
 }
 
 level.fillLevel();
+})();
 
+// level transition stuff
+(function() {
+
+levelTransition.fade = function (amt) {
+    pushStyle();
+    noStroke();
+
+    fill(255, 255 * amt);
+    rect(0, 0, width, height);
+
+    popStyle();
+}
+
+})();
 // scenes
-function scenes() {
+scenes = (function() {
     let play = (function () {
         function Play() {
             this.pastRotateAmt = 0;
@@ -125,7 +149,7 @@ function scenes() {
         }
 
         Play.prototype.calcRotate = function () {
-            this.rotateLerp = min(this.rotateLerp + 0.12, 1);
+            this.rotateLerp = Math.min(this.rotateLerp + 0.12, 1);
 
             if (player.gravity.x > 0) {
                 // if the rotation the previos frame isnt the rotation that the gravity indicates
@@ -206,6 +230,7 @@ function scenes() {
         };
 
         Play.prototype.run = function () {
+
             _camera.run();
 
             this.calcRotate();
@@ -227,17 +252,20 @@ function scenes() {
             popMatrix();
 
             level.runLevel();
+
+            if (levelTransition.amt <= 1) {
+                levelTransition.run();
+            }
         }
 
         return new Play();
     })();
 
+    scenesExists = true;
     return {
         play: play,
     };
-}
-
-scenes = scenes();
+})();
 
 // draw function
 

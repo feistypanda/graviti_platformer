@@ -7,7 +7,7 @@ level = (function () {
         this.levels = [];
 
         // index of the current level
-        this.currentLevelInd = 0;
+        this.currentLevelInd = 7;
 
         // array containing all of the block objects in the current level
         this.currentLevel = [];
@@ -190,9 +190,9 @@ level = (function () {
     Level.prototype.runLevel = function () {
         // misc stuff in the level
         this.displayStuff();
-        if (this.totalFillables <= this.fillablesFilled) {
-            this.currentLevelInd ++;
-            this.fillLevel();
+        if (this.totalFillables <= this.fillablesFilled && levelTransition.amt >= 1) {
+            // transition to the next level
+            levelTransition.reset();
         }
     };
 

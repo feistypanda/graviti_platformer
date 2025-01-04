@@ -13,6 +13,8 @@ const UP = 38;
 const DOWN = 40;
 
 // global variables
+
+let scenesExists = false;
 let click = false;
 let keys = {};
 let scene = 'play';
