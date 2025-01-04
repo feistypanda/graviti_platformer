@@ -18,6 +18,9 @@ Player = (function () {
         // the time it takes before you can jump twice so that if you hold down jump it isnt nauseating
         this.jumpDelay = 0;
 
+        // the delay in between changing your gravity
+        this.gravityChangeDelay = 0;
+
         // the power of the gravity
         this.gravityPower = 1.3;
 
@@ -54,6 +57,11 @@ Player = (function () {
     Player.prototype.reset = function(x, y) {
 
         // reset everything
+        this.jumpDelay = 0;
+
+        this.gravityChangeDelay = 0;
+
+        this.friction = vector.new(this.frictionHorizontal, this.frictionVertical);
 
         this.canJump = false;
 
@@ -176,8 +184,15 @@ Player = (function () {
                 // switch the gravity of the player, change the color of the player, and change the friction on the player and the camera speed
                 // if the center of the player is colliding or this is the only block were coliding with
                 if (centerOver || this.colidingWith.length <= 1) {
+
+                    // change the color of the player
                     this.colorName = b.colorName;
-                    this.gravity = (() => {
+
+                    // record the original gravity
+                    let origGavity = utilities.copyObj(this.gravity);
+
+                    if (this.gravityChangeDelay <= 0) {
+                        this.gravity = (() => {
                         switch (sideOfCollision) {
                         case "top":
 
@@ -202,9 +217,12 @@ Player = (function () {
                             this.friction = vector.new(this.frictionVertical, this.frictionHorizontal);
                             _camera.lerpAmt = vector.new(_camera.lerpVertical, _camera.lerpHorizontal);
                             return vector.new(-this.gravityPower, 0);
-
                         } 
-                    })();
+                    })()
+                    }
+
+                    // check to see if the gravity changed
+                    if (origGavity.x !== this.gravity.x || origGavity.y !== this.gravity.y) this.gravityChangeDelay = 2;
                 }
             }
 
@@ -214,6 +232,21 @@ Player = (function () {
 
                     // if the side were looping over is the same side of the colision AND the color of the player is the color that this side needs to be
                     if (sideOfCollision === k.position && this.colorName === b.sideColors[i].colorNeeded) {
+
+                        if (b.sideColors[i].color !== this.colorName) {
+                            level.fillablesFilled ++;
+                            switch (this.colorName) {
+                            case "red":
+                                level.redFilled ++;
+                                break;
+                            case "green":
+                                level.greenFilled ++;
+                                break;
+                            case "blue":
+                                level.blueFilled ++;
+                                break;
+                            }
+                        };
                         b.sideColors[i].color = this.colorName;
                     }
                 });
@@ -246,6 +279,7 @@ Player = (function () {
     Player.prototype.update = function () {
 
         this.jumpDelay --;
+        this.gravityChangeDelay --;
 
         if (keys[LEFT] || keys.a) {
 

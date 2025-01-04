@@ -61,7 +61,57 @@ player = new Player(playerData);
 
 _camera = new Camera(player);
 
-level.addLevel(levelData[1]);
+level.displayStuff = function() {
+    fill(0, 0, 0);
+    textFont(createFont("Signika"), 30);
+    textAlign(CENTER, TOP);
+    text(this.fillablesFilled + "/" + this.totalFillables, 300, 20);
+
+    let [amt1, amt2, amt3] = [this.redFilled/this.totalFillables, this.greenFilled/this.totalFillables, this.blueFilled/this.totalFillables];
+
+    this.displayProgress(300, 100, color(200, 100, 100), color(100, 200, 100), color(100, 100, 200), amt1, amt2, amt3);
+};
+
+let g = createGraphics(600, 600, P2D);
+
+level.displayProgress = function(x, y, color1, color2, color3, amt1, amt2, amt3) {
+    g.noFill();
+
+    g.strokeWeight(10);
+    g.strokeCap(SQUARE);
+    
+    amt2 += amt1;
+    amt3 += amt2;
+
+    g.stroke(color1);
+    g.arc(200, 200, 50, 50, -PI/2, amt1 * TWO_PI - PI/2);
+    g.stroke(color2);
+    g.arc(200, 200, 50, 50, amt1 * TWO_PI - PI/2, amt2 * TWO_PI - PI/2);
+    g.stroke(color3);
+    g.arc(200, 200, 50, 50, amt2 * TWO_PI - PI/2, amt3 * TWO_PI - PI/2);
+    
+    g.stroke(200);
+    g.arc(200, 200, 50, 50, amt3 * TWO_PI - PI/2, 1.5 * PI);
+
+    let filling = g.get(170, 170, 60, 60);
+
+    g.background(0, 0);
+    g.stroke(255);
+    g.ellipse(200, 200, 50, 50);
+
+    let mask = g.get(170, 170, 60, 60);
+
+    if (filling) {
+        filling.mask(mask);
+    }
+
+    image(filling, x - 30, y - 30);
+
+}
+
+for (let i in levelData) {
+    level.addLevel(levelData[i]);
+}
 
 level.fillLevel();
 
@@ -175,6 +225,8 @@ function scenes() {
 
             level.run();
             popMatrix();
+
+            level.runLevel();
         }
 
         return new Play();

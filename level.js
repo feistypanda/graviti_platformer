@@ -11,6 +11,12 @@ level = (function () {
 
         // array containing all of the block objects in the current level
         this.currentLevel = [];
+
+        this.totalFillables = 0;
+        this.fillablesFilled = 0;
+        this.redFilled = 0;
+        this.greenFilled = 0;
+        this.blueFilled = 0;
     }
 
     Level.prototype.runBlocks = function () {
@@ -29,6 +35,15 @@ level = (function () {
     };
 
     Level.prototype.fillLevel = function () {
+
+        // reset some stuff
+        this.currentLevel = [];
+
+        this.fillablesFilled = 0;
+        this.redFilled = 0;
+        this.greenFilled = 0;
+        this.blueFilled = 0;
+        this.totalFillables = 0;
 
         // convert the level data into an array of block objects
 
@@ -61,8 +76,6 @@ level = (function () {
                     continue;
                 }
 
-                // if (typeInLevelArr) continue;
-
                 // store the locations of neighboring needed colored sides
                 let neighborColors = {
                     top : {left: false, right: false},
@@ -75,9 +88,9 @@ level = (function () {
                 let indIn = (ind, iInd) => {
 
                     if (iInd) {
-                        return ind >=0 && ind < this.levels[this.currentLevelInd].length;
+                        return ind >= 0 && ind < this.levels[this.currentLevelInd].length;
                     }
-                    return ind >=0 && ind < this.levels[this.currentLevelInd][i].length;
+                    return ind >= 0 && ind < this.levels[this.currentLevelInd][i].length;
                 }
 
                 // get the block data for the block being checked
@@ -157,6 +170,8 @@ level = (function () {
                 info.h = BLOCK_SIZE;
                 info.neighborColors = neighborColors;
 
+                info.neededColored?.forEach(k => this.totalFillables += 1);
+
                 // create the block
                 var b = new Block(info);
 
@@ -174,6 +189,11 @@ level = (function () {
 
     Level.prototype.runLevel = function () {
         // misc stuff in the level
+        this.displayStuff();
+        if (this.totalFillables <= this.fillablesFilled) {
+            this.currentLevelInd ++;
+            this.fillLevel();
+        }
     };
 
     Level.prototype.addLevel = function (levelData) {
@@ -214,15 +234,11 @@ level = (function () {
     }
 
     Level.prototype.run = function () {
-        
         // run all of the blocks in the level
         this.runBlocks();
 
         // run the player
         this.runPlayer();
-
-        // check for winning and player dying and other misc
-        this.runLevel();
     };
 
     // create the level handeler object and then return it into the global 'level' variable

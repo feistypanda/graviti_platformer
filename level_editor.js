@@ -250,7 +250,7 @@ levelEditor = (function() {
                     rowSymbols.push(" ");
                 }
 
-                if ((k.x - previos.x)/BLOCK_SIZE - 1 === 0 && !i) {
+                if (!i && (k.x - previos.x)/BLOCK_SIZE > 0) {
                     rowSymbols.push(" ");
                 }
 
