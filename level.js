@@ -7,7 +7,7 @@ level = (function () {
         this.levels = [];
 
         // index of the current level
-        this.currentLevelInd = 7;
+        this.currentLevelInd = 0;
 
         // array containing all of the block objects in the current level
         this.currentLevel = [];

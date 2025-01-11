@@ -303,8 +303,6 @@ Player = (function () {
 
         }
 
-        //  && (this.canJump || this.coyoteFrames > 0)
-
         if ((keys[UP] || keys.w) && (this.canJump || this.coyoteFrames > 0) && this.jumpDelay <= 0 && levelTransition.amt >= 1) {  
 
             this.jumpDelay = 10;
@@ -332,8 +330,16 @@ Player = (function () {
                 
                 this.velocity.x -= this.jumpPower * Math.sign(this.gravity.x);
             }
-
         }
+
+        // shifting increases the drag on the x axis
+        if (keys[16]) {
+            if (this.gravity.y) {
+                this.velocity.x *= 0.3;
+            } else if (this.gravity.x) {
+                this.velocity.y *= 0.3;
+            }
+        } 
 
         this.velocity = vector.add(this.velocity, this.gravity);
 

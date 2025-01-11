@@ -16,7 +16,17 @@ frameRate(60);
 Block.prototype.display = function () {
     noStroke();
     fill(this.color);
-    rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
+
+    if (this.type === "pad") {
+
+        let center = this.getCenter();
+        let side = this.sides[this.orientation];
+        let halfSize = this.dimensions.w/2;
+        
+        
+    } else {
+        rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
+    }
 
     if (this.type === "wall") {
         for (let i in this.positionsOfColorables) {

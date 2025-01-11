@@ -11,6 +11,46 @@ Block = (function () {
         // if its a color block, store its color in this.colorName
         if (this.type === "color") this.colorName = config.colorName;
 
+        // if it is a pressure pad, store its orientation and its state
+        if (this.type === "pad") {
+            this.state = "up";
+            this.orientation = config.orientation;
+            this.vertecies = {
+                "up": (function() {
+                    switch (this.orientation) {
+                    case "top":
+                        return [];
+                        break;
+                    case "left":
+                        return [];
+                        break;
+                    case "right":
+                        return [];
+                        break;
+                    case "bottom":
+                        return [];
+                        break;
+                    }
+                })(),
+                "down": (function() {
+                    switch (this.orientation) {
+                    case "top":
+                        return [];
+                        break;
+                    case "left":
+                        return [];
+                        break;
+                    case "right":
+                        return [];
+                        break;
+                    case "bottom":
+                        return [];
+                        break;
+                    }
+                })(),
+            };
+        }
+
         // if its a wall block keep an array with objects showing the colors of its sides.
         if (this.type === "wall") {
 
