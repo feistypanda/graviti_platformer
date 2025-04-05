@@ -31,6 +31,7 @@ level = (function () {
 
             // run the block
             this.currentLevel[i].run();
+            // processing.image(this.currentLevel[i].graphics);
         }
     };
 
@@ -45,6 +46,12 @@ level = (function () {
         this.blueFilled = 0;
         this.totalFillables = 0;
 
+        // keep track of the blocks to be added
+        let infoList = [];
+
+        // keep track of the blocks with identifiers
+        let ids = {};
+
         // convert the level data into an array of block objects
 
         // loop through all of the rows in the level to be used
@@ -55,14 +62,16 @@ level = (function () {
 
                 i = +i, j = +j;
 
-                // get the character representation of the block to be added
+                // get the block to be added
                 let typeInLevelArr = this.levels[this.currentLevelInd][i][j];
 
-                // skip over this block if it is an empty space in the level data and push a 0 to the level array
+                // if it has an id, record it
+                if (typeInLevelArr.id !== undefined) ids[typeInLevelArr.id] = infoList.length;
+
+                // skip over this block if it is an empty space in the level data and push a 0 to the info array
                 if (typeInLevelArr === " ") {
 
-                    // fill the 1d level array with a 0 to signify no block
-                    this.currentLevel.push(0);
+                    infoList.push(0);
                     continue;
                 }
 
@@ -164,6 +173,9 @@ level = (function () {
 
                 let info = utilities.copyObj(typeInLevelArr);
 
+                // if its a pad block connected to another block record the index of that block
+                if (info.connectedId !== undefined) info.connectedTo = ids[info.connectedId];
+
                 info.x = j * BLOCK_SIZE; 
                 info.y = i * BLOCK_SIZE;
                 info.w = BLOCK_SIZE;
@@ -172,12 +184,19 @@ level = (function () {
 
                 info.neededColored?.forEach(k => this.totalFillables += 1);
 
-                // create the block
-                var b = new Block(info);
-
-                // push it to the array to be used
-                this.currentLevel.push(b);
+                infoList.push(info);
             }
+        }
+
+        for (let i of infoList) {
+
+            if (i === 0) {
+                this.currentLevel.push(0)
+                continue;
+            };
+            if (i.connectedId !== undefined) i.connectedTo = ids[i.connectedId];
+
+            this.currentLevel.push(new Block(i));
         }
     };
 

@@ -30,40 +30,77 @@ levelEditor.display = function() {
         fill(block.color);
 
         // draw the block
-        rect(block.x, block.y, BLOCK_SIZE, BLOCK_SIZE);
-
-        // if its a wall block
-
-        if (!(block.name === "wall")) continue;
-
-        let [x, y, w, h] = [block.x, block.y, BLOCK_SIZE, BLOCK_SIZE];
-        let [cx, cy] = [x + w/2, y + h/2];
-
-        for (let i in block.neededColored) {
-
-            if (click) console.log(this.blocks);
-            let side = block.neededColored[i];
-            fill(colors[block.colorNeeded[i]], 100);
-
-            switch (side) {
-            case "top":
-                triangle(cx, cy, x, y, x + w, y);
-                break;
-            case "left":
-                triangle(cx, cy, x, y, x, y + h);
-                break;
-            case "right":
-                triangle(cx, cy, x + w, y, x + w, y + h);
-                break;
-            case "bottom":
-                triangle(cx, cy, x, y + h, x + w, y + h);
-                break;
-            }
+        if (block.name !== "pad") {
+            rect(block.x, block.y, BLOCK_SIZE, BLOCK_SIZE);
         }
 
-        // make it clear that its a wall block so that if all of the sides are the same color
-        fill(block.color);
-        rect(x + w/4, y + w/4, w/2, w/2);
+        // if its a wall block
+        if (block.name === "wall") {
+            let [x, y, w, h] = [block.x, block.y, BLOCK_SIZE, BLOCK_SIZE];
+            let [cx, cy] = [x + w/2, y + h/2];
+
+            // loop through all of the colorinables
+            for (let i in block.neededColored) {
+
+                let side = block.neededColored[i]; // 'top', 'left', 'right', or 'bottom'
+                fill(colors[block.colorNeeded[i]], 100);
+
+                switch (side) {
+                case "top":
+                    triangle(cx, cy, x, y, x + w, y);
+                    break;
+                case "left":
+                    triangle(cx, cy, x, y, x, y + h);
+                    break;
+                case "right":
+                    triangle(cx, cy, x + w, y, x + w, y + h);
+                    break;
+                case "bottom":
+                    triangle(cx, cy, x, y + h, x + w, y + h);
+                    break;
+                }
+            }
+
+            // make it clear that its a wall block so that if all of the sides are the same color
+            fill(block.color);
+            rect(x + w/4, y + w/4, w/2, w/2);
+        } 
+        // if its a pressure pad
+        else if (block.name === "pad") {
+
+            // styling
+            fill(block.color);
+            noStroke();
+
+            let sides = {
+                "left": vector.new(-1, 0),
+                "right": vector.new(1, 0),
+                "top": vector.new(0, -1),
+                "bottom": vector.new(0, 1),
+            };
+
+            // storing variables
+            let side = sides[block.orientation]; // this is a vector with a x and y of -1, 0, or 1
+            let center = vector.new(block.x + BLOCK_SIZE/2, block.y + BLOCK_SIZE/2); // xy vector
+
+            // draw the rect in different places for different oreintation
+            rect(
+                side.x ? center.x - BLOCK_SIZE/4 + BLOCK_SIZE/4 * side.x : block.x, 
+                side.y ? center.y - BLOCK_SIZE/4 + BLOCK_SIZE/4 * side.y : block.y,
+                side.x ? BLOCK_SIZE/2 : BLOCK_SIZE,
+                side.y ? BLOCK_SIZE/2 : BLOCK_SIZE, 
+                );
+        }
+
+        if (block.name === "pad") {
+            fill(0);
+            text(block.connectedId, block.x + BLOCK_SIZE/2, block.y + BLOCK_SIZE/2);
+        }
+
+        if (block.name === "door") {
+            fill(0);
+            text(block.id, block.x + BLOCK_SIZE/2, block.y + BLOCK_SIZE/2);
+        }
     }
 
 
@@ -74,8 +111,6 @@ levelEditor.display = function() {
     fill(0);
     textAlign(LEFT, CENTER);
     text("selected: " + this.typesOfBlocks[this.currentBlock], 10, this.pannelY + (600 - this.pannelY)/2);
-
-
 };
 
 // draw function

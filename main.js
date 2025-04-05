@@ -10,66 +10,59 @@ size(600, 600);
 smooth();
 frameRate(60);
 
-// block stuff
-(function() {
-// player display function because the drawing stuff dosent work outside of the pjs environment
-Block.prototype.display = function () {
-    noStroke();
-    fill(this.color);
+// so I can get pjs in other files
+processing = (() => {
+    return {
+        createGraphics(...args) {
+            return createGraphics(...args);
+        },
 
-    if (this.type === "pad") {
+        image(...args) {
+            return image(...args);
+        },
 
-        let center = this.getCenter();
-        let side = this.sides[this.orientation];
-        let halfSize = this.dimensions.w/2;
-        
-        
-    } else {
-        rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
+        background(...args) {
+            return background(...args);
+        },
+
+        noStroke(...args) {
+            return noStroke(...args);
+        },
+
+        rect(...args) {
+            return rect(...args);
+        },
+
+        vertex(...args) {
+            return vertex(...args);
+        },
+
+        beginShape(...args) {
+            return beginShape(...args);
+        },
+
+        endShape(...args) {
+            return endShape(...args);
+        },
+
+        fill(...args) {
+            return fill(...args);
+        },
+
+        red(...args) {
+            return red(...args);
+        },
+
+        green(...args) {
+            return green(...args);
+        },
+
+        blue(...args) {
+            return blue(...args);
+        },
+
+        constants: PConstants,
     }
-
-    if (this.type === "wall") {
-        for (let i in this.positionsOfColorables) {
-
-            fill(colors[this.sideColors[i].color]);
-
-            if (this.sideColors[i].color === "none"){
-
-                let c = colors[this.sideColors[i].colorNeeded];
-
-                fill(
-                    red(c),
-                    green(c),
-                    blue(c),
-                    100
-                );
-            }
-            
-            beginShape();
-
-            for (let j in this.positionsOfColorables[i].x) {
-                
-                vertex(this.positionsOfColorables[i].x[j], this.positionsOfColorables[i].y[j]);
-            }
-
-            endShape(CLOSE);
-
-        }
-    }
-};
-})();
-    
-// player stuff
-(function() {
-
-// player display function because the drawing stuff dosent work outside of the pjs environment
-Player.prototype.display = function () {
-    noStroke();
-    fill(this.color);
-    rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
-};
-
-player = new Player(playerData);
 })();
 
 // camera stuff
@@ -284,6 +277,8 @@ draw = function () {
     globalMouseY = mouseY;
 
     scenes[scene].run();
+
+    text (Math.floor(this.__frameRate), 200, 20);
 
     click = false;
 }

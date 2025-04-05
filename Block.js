@@ -1,9 +1,9 @@
 
 // the blocks in the level
-Block = (function () {
-    function Block(config) {
+class Block extends Box  {
+    constructor (config) {
 
-        Box.call(this, config);
+        super (config);
 
         this.type = config.name;
         this.color = config.color;
@@ -13,43 +13,49 @@ Block = (function () {
 
         // if it is a pressure pad, store its orientation and its state
         if (this.type === "pad") {
-            this.state = "up";
-            this.orientation = config.orientation;
+
+            this.connectedTo = config.connectedTo; // so I guess this is just the index in the 2d level array
+
+            this.state = "up"; // is it pressed or not
+            this.orientation = config.orientation; // yeah thats kinda obvi
+
             this.vertecies = {
-                "up": (function() {
-                    switch (this.orientation) {
-                    case "top":
-                        return [];
-                        break;
-                    case "left":
-                        return [];
-                        break;
-                    case "right":
-                        return [];
-                        break;
-                    case "bottom":
-                        return [];
-                        break;
-                    }
-                })(),
-                "down": (function() {
-                    switch (this.orientation) {
-                    case "top":
-                        return [];
-                        break;
-                    case "left":
-                        return [];
-                        break;
-                    case "right":
-                        return [];
-                        break;
-                    case "bottom":
-                        return [];
-                        break;
-                    }
-                })(),
+                "x": [],
+                "y": [],
             };
+
+            this.pushedDownVertecies = {
+                "x": [],
+                "y": [],
+            };
+
+            let dirs = ["x", "y"];
+
+            for (let i in dirs) {
+
+                let direction = this.sides[this.orientation];
+                let sign = Math.sign(direction[dirs[i]]);
+                let s = this.dimensions.w;
+                let center = this.getCenter();
+
+                // calculate all of the verticies for drawing the shape
+                this.vertecies[dirs[i]].push(
+                    ~~(sign === 0 ? (center[dirs[i]] - s/2):(center[dirs[i]] + s/2 * sign)),
+                    ~~(sign === 0 ? (center[dirs[i]] + s/2):(center[dirs[i]] + s/2 * sign)),
+                    ~~(sign === 0 ? (center[dirs[i]] + s/4):(center[dirs[i]] + s/4 * sign)),
+                    ~~(sign === 0 ? (center[dirs[i]] - s/4):(center[dirs[i]] + s/4 * sign)));
+
+                this.pushedDownVertecies[dirs[i]].push(
+                    ~~(sign === 0 ? (center[dirs[i]] - s/3):(center[dirs[i]] + s/2 * sign)),
+                    ~~(sign === 0 ? (center[dirs[i]] + s/3):(center[dirs[i]] + s/2 * sign)),
+                    ~~(sign === 0 ? (center[dirs[i]] + s/4):(center[dirs[i]] + s/2.5 * sign)),
+                    ~~(sign === 0 ? (center[dirs[i]] - s/4):(center[dirs[i]] + s/2.5 * sign)));
+                
+            }
         }
+
+        // if its a door make it start solid
+        if (this.type === "door") this.solid = true;
 
         // if its a wall block keep an array with objects showing the colors of its sides.
         if (this.type === "wall") {
@@ -68,7 +74,7 @@ Block = (function () {
 
                 let s = this.dimensions.w;
 
-                let center = vector.new(this.position.x + s/2, this.position.y + s/2);
+                let center = this.getCenter();
 
                 let positions = {
                     x: [],
@@ -118,12 +124,73 @@ Block = (function () {
         };
     }
 
-    Block.prototype = Object.create(Box.prototype);
+    update () {
+        if (this.type === "pad" && this.down) {
+            level.currentLevel[this.connectedTo].solid = false;
+        }
+    }
 
-    Block.prototype.update = function () {
+    display () {
+       
+        processing.noStroke();
+        processing.fill(this.color);
 
-    };
+        if (this.type === "door" && !this.solid) processing.fill(processing.red(this.color), processing.green(this.color), processing.blue(this.color), 50)
+        if (this.type === "pad") {
 
-    return Block;
-})();
+
+            processing.fill(this.color);
+                        console.log(this.connectedTo);
+
+            if (!this.connectedCoords) {
+                this.connectedCoords = level.currentLevel[this.connectedTo].position;
+            };
+
+            let vertecies = this.down ? this.pushedDownVertecies:this.vertecies;
+            this.down = false;
+
+            processing.beginShape();
+
+            for (let i in vertecies.x) {
+                
+                processing.vertex(vertecies.x[i], vertecies.y[i]);
+            }
+
+            processing.endShape(processing.constants.CLOSE);
+        } else {
+
+            processing.rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
+        }
+
+        if (this.type === "wall") {
+            for (let i in this.positionsOfColorables) {
+
+                processing.fill(colors[this.sideColors[i].color]);
+
+                if (this.sideColors[i].color === "none"){
+
+                    let c = colors[this.sideColors[i].colorNeeded];
+
+                    processing.fill(
+                        processing.red(c),
+                        processing.green(c),
+                        processing.blue(c),
+                        100
+                    );
+                }
+                
+                processing.beginShape();
+
+                for (let j in this.positionsOfColorables[i].x) {
+                    
+                    processing.vertex(this.positionsOfColorables[i].x[j], this.positionsOfColorables[i].y[j]);
+                }
+
+                processing.endShape(processing.constants.CLOSE);
+
+            }
+        }
+    }
+
+};
 

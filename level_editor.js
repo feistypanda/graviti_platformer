@@ -6,7 +6,7 @@ levelEditor = (function() {
         this.offset = vector.new(0, 0);
 
         // the list of the different block types to cycle through
-        this.typesOfBlocks = ["W", "C", "Erase", "@"];
+        this.typesOfBlocks = ["W", "C", "Erase", "@", "pad", "door"];
 
         // the index of the type of block that is currently selected in the block types array
         this.currentBlock = 1;
@@ -44,10 +44,13 @@ levelEditor = (function() {
         // if the eraser is selected then dont push anything
         if (type !== "Erase") {
 
-            let infoOfBlock = utilities.copyObj(blockTypes[type])
+            let infoOfBlock = utilities.copyObj(blockTypes[type]);
 
             // the information for the new block that we are creating
             let info = {...infoOfBlock, x, y};
+
+            if (info.name === "door") info.id = 0;
+            if (info.name === "pad") info.connectedId = 0;
 
             // push a new block. the information is changed based off of which type of block is being added
             this.blocks.push(info);
@@ -115,6 +118,32 @@ levelEditor = (function() {
             block.colorName = newColorName;
             block.color = colors[newColorName];
 
+            break;
+        case "pad":
+
+            if (keys["="]) {
+
+                // change id
+                block.connectedId ++;
+            } else if (keys["-"]) {
+                block.connectedId --;
+            } else {
+                // figure out the next orientation
+                let orientationList = ["top", "left", "bottom", "right"];
+                let newOrientaion = orientationList[(orientationList.indexOf(block.orientation) + 1) % orientationList.length];
+
+                // set the oreintation
+                block.orientation = newOrientaion;
+            }
+            break;
+        case "door":
+            if (keys["="]) {
+
+                // change id
+                block.id ++;
+            } else if (keys["-"]) {
+                block.id --;
+            }
             break;
         }
     }; 

@@ -12,11 +12,11 @@ let log = (message) => {
 
 let utilities = (function () {
     return {
-        distSq(x1, y1, x2, y2) {
+        distSq (x1, y1, x2, y2) {
             return (x1 - y1) * (x1 - y1) + (x2 - y2) * (x2 - y2);
         },
 
-        AABB: function(thing1, thing2) {
+        AABB (thing1, thing2) {
 
             let p1 = thing1.position;
             let p2 = thing2.position;
@@ -59,7 +59,11 @@ let utilities = (function () {
 
         copyObj (obj) {
             return JSON.parse(JSON.stringify(obj));
-        }
+        },
 
+        flipDirec (direc) {
+            if (["top", "bottom"].includes(direc)) return ["top", "bottom"][(["top", "bottom"].indexOf(direc) + 1) % 2];
+            if (["left", "right"].includes(direc)) return ["left", "right"][(["left", "right"].indexOf(direc) + 1) % 2];
+        }
     };
 })();
