@@ -61,6 +61,10 @@ processing = (() => {
             return blue(...args);
         },
 
+        color(...args) {
+            return color(...args);
+        },
+
         constants: PConstants,
     }
 })();

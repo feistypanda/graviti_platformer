@@ -182,11 +182,14 @@ player = (function () {
                     }
                 })();
 
+                console.log(b.colorName);
+
                 // the player dosent interact with pressure pads outside of switching them on
                 if (b.type === "pad") {
-                    if (Math.sign(this.gravity.x) === this.sides[utilities.flipDirec(b.orientation)].x &&
-                        Math.sign(this.gravity.x) === this.sides[utilities.flipDirec(b.orientation)].x &&
-                        this.colidingWith.length === 1) b.down = true;
+                    if (Math.sign(this.gravity.x) === this.sides[b.orientation].x &&
+                        Math.sign(this.gravity.y) === this.sides[b.orientation].y &&
+                        this.colidingWith.length === 1 &&
+                        this.colorName === b.colorName) b.down = true;
                     continue;
                 }
 

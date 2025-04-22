@@ -6,7 +6,7 @@ levelEditor = (function() {
         this.offset = vector.new(0, 0);
 
         // the list of the different block types to cycle through
-        this.typesOfBlocks = ["W", "C", "Erase", "@", "pad", "door"];
+        this.typesOfBlocks = ["wall", "color", "erase", "spawn", "pad", "door"];
 
         // the index of the type of block that is currently selected in the block types array
         this.currentBlock = 1;
@@ -42,7 +42,7 @@ levelEditor = (function() {
         this.blocks = this.blocks.filter(k => k.x !== x || k.y !== y);
 
         // if the eraser is selected then dont push anything
-        if (type !== "Erase") {
+        if (type !== "erase") {
 
             let infoOfBlock = utilities.copyObj(blockTypes[type]);
 
@@ -127,6 +127,14 @@ levelEditor = (function() {
                 block.connectedId ++;
             } else if (keys["-"]) {
                 block.connectedId --;
+            } else if (keys["o"]) {
+                // change the color of the color block
+                let colorNameList = Object.keys(colors);
+                let colorValueList = Object.values(colors);
+                let newColorName = colorNameList[(colorNameList.indexOf(block.colorName) + 1) % colorNameList.length];
+
+                block.colorName = newColorName;
+                block.color = colors[newColorName];
             } else {
                 // figure out the next orientation
                 let orientationList = ["top", "left", "bottom", "right"];

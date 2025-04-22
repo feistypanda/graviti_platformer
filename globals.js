@@ -39,10 +39,10 @@ let colors = {
 let blockTypes = (function () {
     return {
 
-        "W": {name: "wall", color: -3618616, neededColored: [], colorNeeded: []},
-        "@": {name: "spawn", color: 854916961},
+        "wall": {name: "wall", color: -3618616, neededColored: [], colorNeeded: []},
+        "spawn": {name: "spawn", color: 854916961},
         "pad": {name: "pad", color: colors.none, connectedId: 0, colorName: "none", orientation: "top"},
-        "C": {name: "color", color: colors.none, colorName: "none"},
-        "door": {name: "door", id: 0, color: colors.none},
+        "color": {name: "color", color: colors.none, colorName: "none"},
+        "door": {name: "door", id: 0, color: colors.none, colorName: "none"},
     };
 })();

@@ -7,6 +7,7 @@ class Block extends Box  {
 
         this.type = config.name;
         this.color = config.color;
+        this.colorName = config.colorName;
 
         // if its a color block, store its color in this.colorName
         if (this.type === "color") this.colorName = config.colorName;
@@ -126,7 +127,7 @@ class Block extends Box  {
 
     update () {
         if (this.type === "pad" && this.down) {
-            level.currentLevel[this.connectedTo].solid = false;
+            this.connectedTo.solid = false;
         }
     }
 
@@ -138,13 +139,26 @@ class Block extends Box  {
         if (this.type === "door" && !this.solid) processing.fill(processing.red(this.color), processing.green(this.color), processing.blue(this.color), 50)
         if (this.type === "pad") {
 
-
             processing.fill(this.color);
-                        console.log(this.connectedTo);
 
-            if (!this.connectedCoords) {
-                this.connectedCoords = level.currentLevel[this.connectedTo].position;
-            };
+            // if this.connected to is still an index in the array of blocks
+            if (typeof this.connectedTo === "number") {
+
+                // make this.connectedTo a refrence to the object of the block in question
+                this.connectedTo = level.currentLevel[this.connectedTo];
+
+                // make the color darker so that the pads and doors stand out, not doing this in the editor bc the existing color system that I have works fine
+                this.color = processing.color(processing.red(this.color) - 100, processing.green(this.color) - 100, processing.blue(this.color) - 100)
+
+                // maek it so that the color of the door and its pad are the same
+                this.connectedTo.color = this.color;
+                this.connectedTo.colorName = this.colorName;
+            }
+            
+            // im pretty sure this is useless but just leaving it here in case I am horribly wrong
+            // if (!this.connectedCoords) {
+                // this.connectedCoords = level.currentLevel[this.connectedTo].position  
+            // };
 
             let vertecies = this.down ? this.pushedDownVertecies:this.vertecies;
             this.down = false;
