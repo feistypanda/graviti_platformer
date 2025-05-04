@@ -282,8 +282,6 @@ draw = function () {
 
     scenes[scene].run();
 
-    text (Math.floor(this.__frameRate), 200, 20);
-
     click = false;
 }
 

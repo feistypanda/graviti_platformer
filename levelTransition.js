@@ -15,6 +15,9 @@ let levelTransition = (function() {
 
 		// keep track if the level has been changed yet
 		this.changedLevel = true;
+
+		// keep track of if we are resetting the current level or going to the next level.
+		this.resetting = false;
 	};
 
 	// run the function
@@ -41,16 +44,16 @@ let levelTransition = (function() {
 		// go to the next level if the transition is halfway done
 		if (this.amt >= 0.5 && !this.changedLevel) {
 			this.changedLevel = true;
-			level.currentLevelInd ++;
+			if (!this.resetting) level.currentLevelInd ++;
 			level.fillLevel();
 		}
 
 	};
 
-	Transition.prototype.reset = function () {
+	Transition.prototype.reset = function (resetting) {
 		this.amt = 0;
-		// this.lastLevelImage = get();
 		this.changedLevel = false;
+		this.resetting = resetting;
 	};
 
 	return new Transition();

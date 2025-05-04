@@ -213,6 +213,11 @@ level = (function () {
             // transition to the next level
             levelTransition.reset();
         }
+
+        if (keys.r) {
+            
+            levelTransition.reset(true);
+        }
     };
 
     Level.prototype.addLevel = function (levelData) {

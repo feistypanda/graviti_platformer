@@ -70,6 +70,7 @@ player = (function () {
             this.colidingWith = [];
 
             this.colorName = "none";
+            this.color = colors.none;
 
             this.gravity = vector.new(0, this.gravityPower);
 
