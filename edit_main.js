@@ -68,10 +68,6 @@ levelEditor.display = function() {
         // if its a pressure pad
         else if (block.name === "pad") {
 
-            // styling
-            fill(block.color);
-            noStroke();
-
             let sides = {
                 "left": vector.new(-1, 0),
                 "right": vector.new(1, 0),
@@ -91,6 +87,20 @@ levelEditor.display = function() {
                 side.y ? BLOCK_SIZE/2 : BLOCK_SIZE, 
                 );
         }
+        // if its a wire
+        else if (block.name === "wire") {
+            for (let i in block.nodes) {
+
+                let [x, y] = [block.nodes[i][0] + BLOCK_SIZE/4, block.nodes[i][1] + BLOCK_SIZE/4]; 
+                // rect in the middle
+                rect (x, y, BLOCK_SIZE/2, BLOCK_SIZE/2);
+                
+                // connecting the nodes
+                if (i > 0) {
+                    rect(x, y, (block.nodes[i - 1][0] + BLOCK_SIZE * 3/4) - x,(block.nodes[i - 1][1] + BLOCK_SIZE * 3/4) - y);
+                }
+            }
+        }
 
         if (block.name === "pad") {
             fill(0);
@@ -100,6 +110,12 @@ levelEditor.display = function() {
         if (block.name === "door") {
             fill(0);
             text(block.id, block.x + BLOCK_SIZE/2, block.y + BLOCK_SIZE/2);
+        }
+
+        if (block.name === "text") {
+            fill(0);
+            textAlign(CENTER);
+            text(block.text, block.x + BLOCK_SIZE/2, block.y + BLOCK_SIZE/2);
         }
     }
 

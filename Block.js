@@ -8,6 +8,7 @@ class Block extends Box  {
         this.type = config.name;
         this.color = config.color;
         this.colorName = config.colorName;
+        this.text = config.text
 
         // if its a color block, store its color in this.colorName
         if (this.type === "color") this.colorName = config.colorName;
@@ -171,7 +172,16 @@ class Block extends Box  {
             }
 
             processing.endShape(processing.constants.CLOSE);
-        } else {
+        } else if (this.type === "text") {
+
+            // console.log(this.text)
+            processing.fill(0);
+
+            processing.textAlign(processing.constants.CENTER);
+            processing.textFont(processing.createFont("Signika"), 20);
+
+            processing.text(this.text, this.position.x + this.dimensions.w/2, this.position.y + this.dimensions.h/2);
+        } else{
 
             processing.rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
         }

@@ -183,8 +183,6 @@ player = (function () {
                     }
                 })();
 
-                console.log(b.colorName);
-
                 // the player dosent interact with pressure pads outside of switching them on
                 if (b.type === "pad") {
                     if (Math.sign(this.gravity.x) === this.sides[b.orientation].x &&
@@ -192,7 +190,9 @@ player = (function () {
                         this.colidingWith.length === 1 &&
                         this.colorName === b.colorName) b.down = true;
                     continue;
-                }
+                } 
+                
+                if (b.type === "text") continue;
 
                 if (b.type === "door" && !b.solid) continue;
 
@@ -303,14 +303,14 @@ player = (function () {
             this.jumpDelay --;
             this.gravityChangeDelay --;
 
-            if (keys[LEFT] || keys.a) {
+            if ((keys[LEFT] || keys.a)) {
 
                 this.velocity.x -= this.movementPower * Math.sign(this.gravity.y);
                 this.velocity.y += this.movementPower * Math.sign(this.gravity.x);
 
             }
 
-            if (keys[RIGHT] || keys.d) {
+            if ((keys[RIGHT] || keys.d)) {
 
                 this.velocity.x += this.movementPower * Math.sign(this.gravity.y);
                 this.velocity.y -= this.movementPower * Math.sign(this.gravity.x);

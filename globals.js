@@ -44,5 +44,6 @@ let blockTypes = (function () {
         "pad": {name: "pad", color: colors.none, connectedId: 0, colorName: "none", orientation: "top"},
         "color": {name: "color", color: colors.none, colorName: "none"},
         "door": {name: "door", id: 0, color: colors.none, colorName: "none"},
+        "text": {name: "text", color: colors.none, colorName: "none", text: ""},
     };
 })();

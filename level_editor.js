@@ -6,10 +6,10 @@ levelEditor = (function() {
         this.offset = vector.new(0, 0);
 
         // the list of the different block types to cycle through
-        this.typesOfBlocks = ["wall", "color", "erase", "spawn", "pad", "door"];
+        this.typesOfBlocks = ["wall", "color", "erase", "spawn", "pad", "door", "text"];
 
         // the index of the type of block that is currently selected in the block types array
-        this.currentBlock = 1;
+        this.currentBlock = 0;
 
         // the display pannel
         this.pannelY = 520;
@@ -37,6 +37,12 @@ levelEditor = (function() {
 
         // get the x and y of the block where the mouse is and the type of block to add
         [x, y, type] = [...this.findBlockCoords()];
+
+        //if were adding a wire then dont just do that
+        if (type === "wire") {
+            this.blocks.push({nodes: [[x, y]], name: "wire", color: colors.none, colorName: "none"});
+            return "wire";
+        }
 
         // remove all blocks already at this coordinate so that we dont get overlapment
         this.blocks = this.blocks.filter(k => k.x !== x || k.y !== y);
@@ -151,6 +157,14 @@ levelEditor = (function() {
                 block.id ++;
             } else if (keys["-"]) {
                 block.id --;
+            }
+            break;
+        case "text":
+            let blurbs = ["WAD or ARROWs\nto move", "When you touch a colored block,\ngravity changes so that\nthe side you touched is beneath you"];
+            if (keys.a) {
+                block.text = blurbs[0];
+            } else if (keys.b) {
+                block.text = blurbs[1];
             }
             break;
         }

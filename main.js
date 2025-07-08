@@ -29,6 +29,10 @@ processing = (() => {
             return noStroke(...args);
         },
 
+        noFill(...args) {
+            return noFill(...args);
+        },
+
         rect(...args) {
             return rect(...args);
         },
@@ -65,6 +69,34 @@ processing = (() => {
             return color(...args);
         },
 
+        text(...args) {
+            return text(...args);
+        },
+
+        textAlign(...args) {
+            return textAlign(...args);
+        },
+
+        textFont(...args) {
+            return textFont(...args);
+        },
+
+        createFont(...args) {
+            return createFont(...args);
+        },
+
+        stroke(...args) {
+            return stroke(...args);
+        },
+
+        strokeWeight(...args) {
+            return strokeWeight(...args);
+        },
+
+        strokeJoin(...args) {
+            return strokeJoin(...args);
+        },
+
         constants: PConstants,
     }
 })();
@@ -78,14 +110,15 @@ _camera = new Camera(player);
 (function() {
 
 level.displayStuff = function() {
+
     fill(0, 0, 0);
-    textFont(createFont("Signika"), 30);
-    textAlign(CENTER, TOP);
-    text(this.fillablesFilled + "/" + this.totalFillables, 300, 20);
+    textFont(createFont("Signika"), 35);
+    textAlign(LEFT, CENTER);
+    text(this.fillablesFilled + "/" + this.totalFillables, 80, 558);
 
     let [amt1, amt2, amt3] = [this.redFilled/this.totalFillables, this.greenFilled/this.totalFillables, this.blueFilled/this.totalFillables];
 
-    this.displayProgress(300, 100, color(200, 100, 100), color(100, 200, 100), color(100, 100, 200), amt1, amt2, amt3);
+    this.displayProgress(40, 560, color(200, 100, 100), color(100, 200, 100), color(100, 100, 200), amt1, amt2, amt3);
 };
 
 // for the progress ring
@@ -100,15 +133,19 @@ level.displayProgress = function(x, y, color1, color2, color3, amt1, amt2, amt3)
     amt2 += amt1;
     amt3 += amt2;
 
-    g.stroke(color1);
-    g.arc(200, 200, 50, 50, -PI/2, amt1 * TWO_PI - PI/2);
-    g.stroke(color2);
-    g.arc(200, 200, 50, 50, amt1 * TWO_PI - PI/2, amt2 * TWO_PI - PI/2);
-    g.stroke(color3);
-    g.arc(200, 200, 50, 50, amt2 * TWO_PI - PI/2, amt3 * TWO_PI - PI/2);
+    g.stroke (color1);
+    g.fill (color1);
+    g.arc (200, 200, 50, 50, -PI/2, amt1 * TWO_PI - PI/2);
+    g.stroke (color2);
+    g.fill (color2);
+    g.arc (200, 200, 50, 50, amt1 * TWO_PI - PI/2, amt2 * TWO_PI - PI/2);
+    g.stroke (color3);
+    g.fill (color3);
+    g.arc (200, 200, 50, 50, amt2 * TWO_PI - PI/2, amt3 * TWO_PI - PI/2);
     
-    g.stroke(150);
-    g.arc(200, 200, 50, 50, amt3 * TWO_PI - PI/2, 1.5 * PI);
+    g.stroke (150);
+    g.fill (150);
+    g.arc (200, 200, 50, 50, amt3 * TWO_PI - PI/2, 1.5 * PI);
 
     let filling = g.get(170, 170, 60, 60);
 
@@ -238,6 +275,11 @@ scenes = (function() {
 
         Play.prototype.run = function () {
 
+            //background
+            background(240, 200);
+
+            backgroundHandler.run();
+
             _camera.run();
 
             this.calcRotate();
@@ -252,8 +294,6 @@ scenes = (function() {
             this.doRotate();
             
             translate(-width/2, -height/2);
-            //bacground
-            background(240, 200);
 
             level.run();
             popMatrix();

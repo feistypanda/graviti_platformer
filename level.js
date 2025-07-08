@@ -182,6 +182,7 @@ level = (function () {
                 info.h = BLOCK_SIZE;
                 info.neighborColors = neighborColors;
 
+                // record how many colored things the player needs to color
                 info.neededColored?.forEach(k => this.totalFillables += 1);
 
                 infoList.push(info);
@@ -191,7 +192,7 @@ level = (function () {
         for (let i of infoList) {
 
             if (i === 0) {
-                this.currentLevel.push(0)
+                this.currentLevel.push(0);
                 continue;
             };
             if (i.connectedId !== undefined) i.connectedTo = ids[i.connectedId];
@@ -207,15 +208,17 @@ level = (function () {
     };
 
     Level.prototype.runLevel = function () {
+        
         // misc stuff in the level
         this.displayStuff();
+    
         if (this.totalFillables <= this.fillablesFilled && levelTransition.amt >= 1) {
             // transition to the next level
             levelTransition.reset();
         }
 
-        if (keys.r) {
-            
+        if (keys.r && levelTransition.amt >= 1) {
+
             levelTransition.reset(true);
         }
     };
