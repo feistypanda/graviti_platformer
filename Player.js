@@ -182,15 +182,6 @@ player = (function () {
                         }
                     }
                 })();
-
-                // the player dosent interact with pressure pads outside of switching them on
-                if (b.type === "pad") {
-                    if (Math.sign(this.gravity.x) === this.sides[b.orientation].x &&
-                        Math.sign(this.gravity.y) === this.sides[b.orientation].y &&
-                        this.colidingWith.length === 1 &&
-                        this.colorName === b.colorName) b.down = true;
-                    continue;
-                } 
                 
                 if (b.type === "text") continue;
 
@@ -273,26 +264,54 @@ player = (function () {
                     });
                 }
 
-                ["top", "bottom", "left", "right"].forEach((k) => {
-                    if (sideOfCollision === k && (Math.sign(this.gravity.y) === -this.sides[k].y && Math.sign(this.gravity.x) === -this.sides[k].x)) {
 
-                        // allow jumping because landed on top of a block
-                        this.canJump = true;
-                        this.coyoteFrames = this.startingCoyoteTime;
+                
+
+                if (!(b.type === "pad")) {
+                    ["top", "bottom", "left", "right"].forEach((k) => {
+                        if (sideOfCollision === k && (Math.sign(this.gravity.y) === -this.sides[k].y && Math.sign(this.gravity.x) === -this.sides[k].x)) {
+
+                            // allow jumping because landed on top of a block
+                            this.canJump = true;
+                            this.coyoteFrames = this.startingCoyoteTime;
+                        }
+                    })
+                    if (this.velocity[direc] > 0) {
+
+                        this.position[direc] = b.position[direc] - this.dimensions[direcToDimensionMap[direc]];
+                        toBeVelocity[direc] = 0;
+
+                    } else if (this.velocity[direc] < 0) {
+
+                        this.position[direc] = b.position[direc] + b.dimensions[direcToDimensionMap[direc]];
+                        toBeVelocity[direc] = 0;
+
                     }
-                })
-
-                if (this.velocity[direc] > 0) {
-
-                    this.position[direc] = b.position[direc] - this.dimensions[direcToDimensionMap[direc]];
-                    toBeVelocity[direc] = 0;
-
-                } else if (this.velocity[direc] < 0) {
-
-                    this.position[direc] = b.position[direc] + b.dimensions[direcToDimensionMap[direc]];
-                    toBeVelocity[direc] = 0;
-
                 }
+
+                // the player dosent interact with pressure pads outside of switching them on
+                if (b.type === "pad") {
+                    // if there are still other non-pad collisions in queue, then skip this one and add a copy of it to the end.
+                    let nonPadInQue = false;
+                    if (i < this.colidingWith.length - 1) {
+                        
+                        for (let j = i; j < this.colidingWith.length; j ++) {
+                            if (this.colidingWith[j].type !== "pad") {
+                                this.colidingWith.push(b);
+                                nonPadInQue = true;
+                            }
+                        }    
+                    }
+                    if (!nonPadInQue) {
+                        // otherwise do the collision
+                        if (Math.sign(this.gravity.x) === this.sides[b.orientation].x &&
+                            Math.sign(this.gravity.y) === this.sides[b.orientation].y &&
+                            // this.colidingWith.length === 1 &&
+                            this.coliding(b) && // check to see if a wall collision pushed us out of the hitbox of the pad
+                            this.colorName === b.colorName) b.down = true;
+                        continue;
+                    }
+                } 
             }
 
             this.velocity = toBeVelocity;

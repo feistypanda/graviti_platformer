@@ -111,14 +111,16 @@ _camera = new Camera(player);
 
 level.displayStuff = function() {
 
-    fill(0, 0, 0);
+    fill(0, 0, 0, 200);
     textFont(createFont("Signika"), 35);
     textAlign(LEFT, CENTER);
-    text(this.fillablesFilled + "/" + this.totalFillables, 80, 558);
+    text(this.fillablesFilled + "/" + this.totalFillables, 85, 558);
 
     let [amt1, amt2, amt3] = [this.redFilled/this.totalFillables, this.greenFilled/this.totalFillables, this.blueFilled/this.totalFillables];
 
-    this.displayProgress(40, 560, color(200, 100, 100), color(100, 200, 100), color(100, 100, 200), amt1, amt2, amt3);
+    this.displayProgress(45, 560, color(200, 100, 100), color(100, 200, 100), color(100, 100, 200), amt1, amt2, amt3);
+
+    text(`level ${this.currentLevelInd + 1}`, 15, 500)
 };
 
 // for the progress ring
@@ -244,7 +246,7 @@ scenes = (function() {
             rotate(lerp(pastRotate, curRotate, this.rotateLerp));
         };
 
-        Play.prototype.translateWithRotate = function() {
+        Play.prototype.translateWithRotate = function(translationScale = 1) {
 
             // all of the different translation ammounts
             let coord1 = ~~(-(-_camera.position.y + height/2 - player.dimensions.h/2));
@@ -268,8 +270,8 @@ scenes = (function() {
 
             // lerp between now and last for smooth rotate
             translate(
-                lerp(translateMap[this.rotateAmt].x, translateMap[this.pastRotateAmt].x, 1 - this.rotateLerp),
-                lerp(translateMap[this.rotateAmt].y, translateMap[this.pastRotateAmt].y, 1 - this.rotateLerp)
+                lerp(translateMap[this.rotateAmt].x, translateMap[this.pastRotateAmt].x, 1 - this.rotateLerp) * translationScale,
+                lerp(translateMap[this.rotateAmt].y, translateMap[this.pastRotateAmt].y, 1 - this.rotateLerp) * translationScale
                 );
         };
 
@@ -277,8 +279,27 @@ scenes = (function() {
 
             //background
             background(240, 200);
+            
+            // background shapes
+            pushMatrix();
 
-            backgroundHandler.run();
+                // loop through the different distances of shapes to make them paralaxed
+                // ten different layers
+
+                for (let i = 0; i < 10; i ++) {
+
+                    this.translateWithRotate(0.1 - (i/100));
+                
+                    translate(width/2, height/2);
+    
+                    this.doRotate();
+                    
+                    translate(-width/2, -height/2);
+
+                    backgroundHandler.run(i);
+                }
+
+            popMatrix();
 
             _camera.run();
 
