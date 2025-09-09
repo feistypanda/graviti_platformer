@@ -10,6 +10,7 @@ size(600, 600);
 smooth();
 frameRate(60);
 
+
 // so I can get pjs in other files
 processing = (() => {
     return {
@@ -101,6 +102,35 @@ processing = (() => {
     }
 })();
 
+// block stuff
+
+filterBlockImages = (function() {
+    
+    function filterBlockImage (filterColor) {
+        let darkColor = color(red(colors[filterColor]) - 100, green(colors[filterColor]) - 100, blue(colors[filterColor]) - 100);
+        let g = createGraphics(200, 200);
+
+        g.noStroke();
+        g.fill(red(colors[filterColor]), green(colors[filterColor]), blue(colors[filterColor]), 50);
+        g.rect(0, 0, 200, 200);
+        g.stroke(darkColor);
+        g.strokeWeight(40);
+
+        for (let i = -150; i <= 150; i += 100) {
+            g.line(i - 10, -10, i + 210, 210);
+        }
+
+        return g.get();
+
+    }
+
+    return {
+        red: filterBlockImage("red"),
+        green: filterBlockImage("green"),
+        blue: filterBlockImage("blue"),
+    };
+})();
+
 // camera stuff
 (function() {
 _camera = new Camera(player);
@@ -120,7 +150,13 @@ level.displayStuff = function() {
 
     this.displayProgress(45, 560, color(200, 100, 100), color(100, 200, 100), color(100, 100, 200), amt1, amt2, amt3);
 
-    text(`level ${this.currentLevelInd + 1}`, 15, 500)
+    text(`level ${this.currentLevelInd + 1}`, 15, 500);
+
+    //display the timer
+    textAlign(RIGHT, CENTER);
+    let times = this.getTime();
+    text(utilities.stringifyTime(times[0]), 585, 558);
+    text(utilities.stringifyTime(times[1]), 585, 518);
 };
 
 // for the progress ring

@@ -19,6 +19,7 @@ let click = false;
 let keys = {};
 let scene = 'play';
 let processing;
+let filterBlockImages;
 // player data
 let playerData = {
     x: 200, y: 200,
@@ -33,17 +34,22 @@ let colors = {
     "green": -10172316,
     "blue": -10197816,
     "none": -10197916,
+    
 };
+
+const wallColor = -3618616;
 
 // block types
 let blockTypes = (function () {
     return {
 
-        "wall": {name: "wall", color: -3618616, neededColored: [], colorNeeded: []},
+        "wall": {name: "wall", color: wallColor, neededColored: [], colorNeeded: []},
         "spawn": {name: "spawn", color: 854916961},
         "pad": {name: "pad", color: colors.none, connectedId: 0, colorName: "none", orientation: "top"},
         "color": {name: "color", color: colors.none, colorName: "none"},
         "door": {name: "door", id: 0, color: colors.none, colorName: "none"},
+        "reverseDoor": {name: "reverseDoor", id: 0, color: colors.none, colorName: "none"},
         "text": {name: "text", color: colors.none, colorName: "none", text: ""},
+        "filter": {name: "filter", color: colors.none, colorName: "none"},
     };
 })();

@@ -7,7 +7,7 @@ level = (function () {
         this.levels = [];
 
         // index of the current level
-        this.currentLevelInd = 18;
+        this.currentLevelInd = 0;
 
         // array containing all of the block objects in the current level
         this.currentLevel = [];
@@ -17,6 +17,17 @@ level = (function () {
         this.redFilled = 0;
         this.greenFilled = 0;
         this.blueFilled = 0;
+
+        // keep track of time spent on each level
+        this.bestLevelTimes = (() => {
+            let arr = [];
+            for (let i = 0; i < levelData.length; i ++) {
+                arr.push(0);
+            }
+            return arr;
+        })();
+        this.currentLevelStartTime = 0;
+        this.currentLevelTime = 0;
     }
 
     Level.prototype.runBlocks = function () {
@@ -199,6 +210,10 @@ level = (function () {
 
             this.currentLevel.push(new Block(i));
         }
+
+        // start the timer
+        this.currentLevelStartTime = Date.now();
+        this.currentLevelTime = 0;
     };
 
     Level.prototype.runPlayer = function () {
@@ -213,11 +228,21 @@ level = (function () {
         this.displayStuff();
     
         if (this.totalFillables <= this.fillablesFilled && levelTransition.amt >= 1) {
+
+            // record time
+            let time = Date.now() - this.currentLevelStartTime;
+            this.currentLevelTime = time;
+            if (time < this.bestLevelTimes[this.currentLevelInd] || !this.bestLevelTimes[this.currentLevelInd]) this.bestLevelTimes[this.currentLevelInd] = time;
+
             // transition to the next level
             levelTransition.reset();
         }
 
         if (keys.r && levelTransition.amt >= 1) {
+
+            // start the timer
+            this.currentLevelStartTime = Date.now();
+            this.currentLevelTime = 0;
 
             levelTransition.reset(true);
         }
@@ -267,6 +292,22 @@ level = (function () {
         // run the player
         this.runPlayer();
     };
+
+    // [current level time, total time]
+    Level.prototype.getTime = function () {
+        let totalTime = 0;
+        let curTime = this.currentLevelTime > 0 ? this.currentLevelTime : (Date.now() - this.currentLevelStartTime);
+        for (let i in this.bestLevelTimes) {
+            
+            if (+i === this.currentLevelInd) {
+                totalTime += curTime;
+                continue;
+            }
+            totalTime += this.bestLevelTimes[i];
+        }
+
+        return [curTime, totalTime];
+    }; 
 
     // create the level handeler object and then return it into the global 'level' variable
     return new Level();

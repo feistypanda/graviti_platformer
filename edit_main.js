@@ -107,7 +107,7 @@ levelEditor.display = function() {
             text(block.connectedId, block.x + BLOCK_SIZE/2, block.y + BLOCK_SIZE/2);
         }
 
-        if (block.name === "door") {
+        if (block.name === "door" || block.name === "reverseDoor") {
             fill(0);
             text(block.id, block.x + BLOCK_SIZE/2, block.y + BLOCK_SIZE/2);
         }
@@ -116,6 +116,11 @@ levelEditor.display = function() {
             fill(0);
             textAlign(CENTER);
             text(block.text, block.x + BLOCK_SIZE/2, block.y + BLOCK_SIZE/2);
+        }
+        if (block.name === "filter") {
+            fill(0);
+            textAlign(CENTER);
+            text("f", block.x + BLOCK_SIZE/2, block.y + BLOCK_SIZE/2);
         }
     }
 

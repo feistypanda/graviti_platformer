@@ -6,7 +6,7 @@ levelEditor = (function() {
         this.offset = vector.new(0, 0);
 
         // the list of the different block types to cycle through
-        this.typesOfBlocks = ["wall", "color", "erase", "spawn", "pad", "door", "text"];
+        this.typesOfBlocks = ["wall", "color", "erase", "spawn", "pad", "door", "text", "reverseDoor", "filter"];
 
         // the index of the type of block that is currently selected in the block types array
         this.currentBlock = 0;
@@ -55,7 +55,7 @@ levelEditor = (function() {
             // the information for the new block that we are creating
             let info = {...infoOfBlock, x, y};
 
-            if (info.name === "door") info.id = 0;
+            if (info.name === "door" || info.name === "reverseDoor") info.id = 0;
             if (info.name === "pad") info.connectedId = 0;
 
             // push a new block. the information is changed based off of which type of block is being added
@@ -117,12 +117,10 @@ levelEditor = (function() {
             break;
         case "color":
             // change the color of the color block
-            let colorNameList = Object.keys(colors);
-            let colorValueList = Object.values(colors);
-            let newColorName = colorNameList[(colorNameList.indexOf(block.colorName) + 1) % colorNameList.length];
+            let newColorName1 = Object.keys(colors)[(Object.keys(colors).indexOf(block.colorName) + 1) % Object.keys(colors).length];
 
-            block.colorName = newColorName;
-            block.color = colors[newColorName];
+            block.colorName = newColorName1;
+            block.color = colors[newColorName1];
 
             break;
         case "pad":
@@ -134,13 +132,10 @@ levelEditor = (function() {
             } else if (keys["-"]) {
                 block.connectedId --;
             } else if (keys["o"]) {
-                // change the color of the color block
-                let colorNameList = Object.keys(colors);
-                let colorValueList = Object.values(colors);
-                let newColorName = colorNameList[(colorNameList.indexOf(block.colorName) + 1) % colorNameList.length];
+                let newColorName2 = Object.keys(colors)[(Object.keys(colors).indexOf(block.colorName) + 1) % Object.keys(colors).length];
 
-                block.colorName = newColorName;
-                block.color = colors[newColorName];
+                block.colorName = newColorName2;
+                block.color = colors[newColorName2];
             } else {
                 // figure out the next orientation
                 let orientationList = ["top", "left", "bottom", "right"];
@@ -159,6 +154,22 @@ levelEditor = (function() {
                 block.id --;
             }
             break;
+        case "reverseDoor":
+            if (keys["="]) {
+
+                // change id
+                block.id ++;
+            } else if (keys["-"]) {
+                block.id --;
+            }
+            break;
+        case "filter":
+            // change the color of the filter block
+            let newColorName3 = Object.keys(colors)[(Object.keys(colors).indexOf(block.colorName) + 1) % Object.keys(colors).length];
+
+            block.colorName = newColorName3;
+            block.color = colors[newColorName3];
+            break;
         case "text":
             let blurbs = ["WAD or ARROWs\nto move", "When you touch a colored block,\ngravity changes so that\nthe side you touched is beneath you"];
             if (keys.a) {
@@ -168,6 +179,7 @@ levelEditor = (function() {
             }
             break;
         }
+        
     }; 
 
     LevelEditor.prototype.update = function() {

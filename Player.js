@@ -183,9 +183,13 @@ player = (function () {
                     }
                 })();
                 
+                // no collisions with the text
                 if (b.type === "text") continue;
 
-                if (b.type === "door" && !b.solid) continue;
+                // if we are not the same color as a filter block, we pass through the filter block
+                if (b.type === "filter" && this.color !== b.color) continue;
+
+                if ((b.type === "door" || b.type === "reverseDoor") && !b.solid) continue;
 
                 // get the center of the square on the axis that were coliding on
                 let center = this.getCenter()[opositeDirec];
@@ -263,9 +267,6 @@ player = (function () {
                         }
                     });
                 }
-
-
-                
 
                 if (!(b.type === "pad")) {
                     ["top", "bottom", "left", "right"].forEach((k) => {

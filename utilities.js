@@ -64,6 +64,14 @@ let utilities = (function () {
         flipDirec (direc) {
             if (["top", "bottom"].includes(direc)) return ["top", "bottom"][(["top", "bottom"].indexOf(direc) + 1) % 2];
             if (["left", "right"].includes(direc)) return ["left", "right"][(["left", "right"].indexOf(direc) + 1) % 2];
-        }
+        },
+
+        stringifyTime (ms) {
+            let min = Math.trunc(ms/60000);
+            let sec = Math.trunc((ms - min * 60000)/1000);
+            ms = (ms - min * 60000 - sec * 1000);
+
+            return `${((min > 0)? (min + ":"):"00:") + ((sec > 0)? ((sec < 10? "0":"") + sec + ":"):"00:") + (ms + "000")[0] + (ms + "000")[1]}`;
+        },
     };
 })();

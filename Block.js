@@ -58,6 +58,7 @@ class Block extends Box  {
 
         // if its a door make it start solid
         if (this.type === "door") this.solid = true;
+        if (this.type === "reverseDoor") this.solid = false;
 
         // if its a wall block keep an array with objects showing the colors of its sides.
         if (this.type === "wall") {
@@ -129,6 +130,11 @@ class Block extends Box  {
     update () {
         if (this.type === "pad" && this.down) {
             this.connectedTo.solid = false;
+
+            if (this.connectedTo.type === "reverseDoor") {
+                
+                this.connectedTo.solid = true;
+            }
         }
     }
 
@@ -137,7 +143,11 @@ class Block extends Box  {
         processing.noStroke();
         processing.fill(this.color);
 
-        if (this.type === "door" && !this.solid) processing.fill(processing.red(this.color), processing.green(this.color), processing.blue(this.color), 50)
+        if (this.type === "reveseDoor" && this.solid) {
+            fill(wallColor);
+        }
+
+        if ((this.type === "door" || this.type === "reverseDoor") && !this.solid) processing.fill(processing.red(this.color), processing.green(this.color), processing.blue(this.color), 50)
         if (this.type === "pad") {
 
             processing.fill(this.color);
@@ -181,8 +191,10 @@ class Block extends Box  {
             processing.textFont(processing.createFont("Signika"), 20);
 
             processing.text(this.text, this.position.x + this.dimensions.w/2, this.position.y + this.dimensions.h/2);
+        } else if (this.type === "filter") {
+            processing.image(filterBlockImages[this.colorName], this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
         } else{
-
+            
             processing.rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
         }
 
@@ -214,6 +226,7 @@ class Block extends Box  {
 
             }
         }
+
     }
 
 };

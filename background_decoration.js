@@ -30,7 +30,7 @@ class BackgroundShape {
         
         for (let j = 1; j <= 2; j ++) {
 
-            processing.stroke(processing.red(this.color), processing.green(this.color), processing.blue(this.color), (j < 2 ? 100 : 255) - this.distance * 3 + 25);
+            processing.stroke(processing.red(this.color), processing.green(this.color), processing.blue(this.color), (j < 2 ? 50 : 200) - this.distance * 3 + 25);
             processing.strokeWeight(j < 2 ? 15 : 10);
             processing.noFill();
             processing.strokeJoin(processing.constants.ROUND);
