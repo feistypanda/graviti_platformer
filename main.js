@@ -98,6 +98,102 @@ processing = (() => {
             return strokeJoin(...args);
         },
 
+        polygon (xPos, yPos, numSides, radius, cornerRounding) {
+        
+            cornerRounding = cornerRounding || 0;
+
+            let angleIncrement = (PI*2/numSides);
+
+            if (cornerRounding === 0) {
+                
+                beginShape();
+
+                for (let i = 0; i < numSides ; i ++) {
+                    vertex (xPos + cos(i * angleIncrement) * radius, yPos + sin(i * angleIncrement) * radius);
+                }
+
+                endShape(CLOSE);
+                return;
+            }
+            
+            cornerRounding = constrain(cornerRounding, 0, sin((PI * (numSides - 2) / numSides)/2) * radius * 2);
+            
+            let cornerDist = radius - cornerRounding/cos(angleIncrement/2)/2;
+
+            
+            beginShape();
+            
+            // vertex (xPos + radius, yPos);
+            
+            for (let i = 0; i < numSides ; i ++) {
+                
+                let x = xPos + cos((i + 1) * angleIncrement) * radius;
+                let y = yPos + sin((i + 1) * angleIncrement) * radius;
+                
+                let cornerRoundX = xPos + cos((i + 1) * angleIncrement) * cornerDist;
+                let cornerRoundY = yPos + sin((i + 1) * angleIncrement) * cornerDist;
+                
+                // ellipse (cornerRoundX, cornerRoundY, cornerRounding, cornerRounding);
+                
+                arc (cornerRoundX, cornerRoundY, cornerRounding, cornerRounding, (i + 0.5) * angleIncrement, (i + 1.5) * angleIncrement)
+
+                // let start = (i + 1) * angleIncrement;
+                // let stop = (i + 2) * angleIncrement;
+                // let totalAng = start - stop;
+
+                // for (let j = 4; j >= 0; j --) {
+                //     vertex(cornerRoundX + cos(start + j * (totalAng/6)) * cornerRounding/2, cornerRoundY + sin(start + j * (totalAng/6)) * cornerRounding/2);
+                // }
+                
+                let xOffSet = cos((i + 1.5) * angleIncrement) * cornerRounding/2;
+                let yOffSet = sin((i + 1.5) * angleIncrement) * cornerRounding/2;
+                
+                let x1 = cornerRoundX + xOffSet;
+                let y1 = cornerRoundY + yOffSet;
+                
+                let x2 = (xPos + cos((i + 2) * angleIncrement) * cornerDist) + xOffSet
+                let y2 = (yPos + sin((i + 2) * angleIncrement) * cornerDist) + yOffSet
+                
+                line (x1, y1, x2, y2);
+                // vertex (x1, y1);
+                // vertex (x2, y2);
+            }
+    
+            endShape(); 
+        },
+
+        maxPolyRound: function (numSides, radius) {
+            return sin((PI * (numSides - 2) / numSides)/2) * radius * 2;
+        },
+
+        pushMatrix(...args) {
+            return pushMatrix(...args);
+        },
+
+        popMatrix(...args) {
+            return popMatrix(...args);
+        },
+
+        translate(...args) {
+            return translate(...args);
+        },
+
+        rotate(...args) {
+            return rotate(...args);
+        },
+
+        ellipse(...args) {
+            return ellipse(...args);
+        },
+
+        quad(...args) {
+            return quad(...args);
+        },
+
+        atan2(...args) {
+            return atan2(...args);
+        },
+
         constants: PConstants,
     }
 })();
@@ -319,21 +415,15 @@ scenes = (function() {
             // background shapes
             pushMatrix();
 
-                // loop through the different distances of shapes to make them paralaxed
-                // ten different layers
+                this.translateWithRotate(0.1);
+            
+                translate(width/2, height/2);
 
-                for (let i = 0; i < 10; i ++) {
-
-                    this.translateWithRotate(0.1 - (i/100));
+                this.doRotate();
                 
-                    translate(width/2, height/2);
-    
-                    this.doRotate();
-                    
-                    translate(-width/2, -height/2);
+                translate(-width/2, -height/2);
 
-                    backgroundHandler.run(i);
-                }
+                backgroundHandler.run();
 
             popMatrix();
 

@@ -20,6 +20,8 @@ let keys = {};
 let scene = 'play';
 let processing;
 let filterBlockImages;
+let particles;
+
 // player data
 let playerData = {
     x: 200, y: 200,

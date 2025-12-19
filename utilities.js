@@ -73,5 +73,9 @@ let utilities = (function () {
 
             return `${((min > 0)? (min + ":"):"00:") + ((sec > 0)? ((sec < 10? "0":"") + sec + ":"):"00:") + (ms + "000")[0] + (ms + "000")[1]}`;
         },
+
+        cosify (a) {
+            return Math.cos (a * Math.PI * 2);
+        },
     };
 })();

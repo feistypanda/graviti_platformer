@@ -286,6 +286,9 @@ level = (function () {
     }
 
     Level.prototype.run = function () {
+        // run particles
+        particles.run();
+        
         // run all of the blocks in the level
         this.runBlocks();
 

@@ -202,7 +202,18 @@ player = (function () {
                     if (centerOver || this.colidingWith.length <= 1) {
 
                         // change the color of the player
+                        let newColor = false;
+                        let curCol = this.colorName;
                         this.colorName = b.colorName;
+
+                        if (this.colorName !== curCol) newColor = true;
+                        this.color = colors[this.colorName];
+
+                        if (newColor) {
+                            for (let i = 0; i < 20; i ++) {
+                                particles.add({x: this.position.x + this.dimensions.w/2, y: this.position.y + this.dimensions.h/2, vx: Math.random() * 4 - 2, vy: Math.random() * 6 - 2, angularVelocity: Math.PI/40, color: this.color, affectedByGravity: true})
+                            }
+                        }
 
                         // record the original gravity
                         let origGavity = utilities.copyObj(this.gravity);
@@ -383,10 +394,34 @@ player = (function () {
 
         display () {
 
+            if ((Math.random() < 0.1) && (Math.random() < vector.mag(this.velocity)/5 + 0.2)) particles.add({x: this.position.x + this.dimensions.w/2, y: this.position.y + this.dimensions.h/2, vx: Math.random() * 4 - 2, vy: Math.random() * 6 - 2, angularVelocity: Math.PI/40, color: this.color, affectedByGravity: true});
+
             // player... square
             processing.noStroke();
             processing.fill(this.color);
-            processing.rect(this.position.x, this.position.y, this.dimensions.w, this.dimensions.h);
+
+            processing.pushMatrix();
+
+            let x = this.position.x;
+            let y = this.position.y;
+            let w = this.dimensions.w;
+            let h = this.dimensions.h;
+
+            let velx = this.velocity.x * this.gravity.y - this.velocity.y * this.gravity.x;
+            let vely = this.velocity.y * this.gravity.y - this.velocity.x * this.gravity.x;
+
+            processing.translate (x + w/2, y + h/2)
+            processing.rotate(processing.atan2(this.gravity.y, this.gravity.x) - Math.PI/2);
+
+            processing.quad(
+                -w/2 + velx, -h/2 - vely/3, 
+                -w/2 + velx + w, -h/2 - vely/3, 
+                w/2, h/2,
+                -w/2, h/2
+                );
+
+            processing.popMatrix();
+
         };
 
 

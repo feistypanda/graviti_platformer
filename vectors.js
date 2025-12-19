@@ -27,5 +27,9 @@ let vector = (function () {
         return vector.new(lerp(vec1.x, vec2.x, amt), lerp(vec1.y, vec2.y, amt));
     }
 
+    vector.mag = (vec) => {
+        return Math.sqrt(vec.x * vec.x + vec.y * vec.y);
+    }
+
     return vector;
 })();
