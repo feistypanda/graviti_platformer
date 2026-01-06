@@ -17,7 +17,7 @@ const DOWN = 40;
 let scenesExists = false;
 let click = false;
 let keys = {};
-let scene = 'play';
+let scene = 'menu';
 let processing;
 let filterBlockImages;
 let particles;

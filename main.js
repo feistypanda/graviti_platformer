@@ -11,7 +11,7 @@ smooth();
 frameRate(60);
 
 
-// so I can get pjs in other files
+// so i can get pjs in other files
 processing = (() => {
     return {
         createGraphics(...args) {
@@ -455,10 +455,13 @@ scenes = (function() {
         return new Play();
     })();
 
-    scenesExists = true;
-    return {
-        play: play,
+    let menu = {
+        run () {
+            background (240, 200);
+        }
     };
+
+    return {play: play,menu: menu,};
 })();
 
 // draw function

@@ -1,6 +1,6 @@
 // vectors
 
-let vector = (function () {
+let vector = (() => {
     let vector = {}
 
     vector.new = (x, y) => {
