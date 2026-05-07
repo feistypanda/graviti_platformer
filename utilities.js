@@ -77,5 +77,9 @@ let utilities = (function () {
         cosify (a) {
             return Math.cos (a * Math.PI * 2);
         },
+
+        anim1 (x) {
+            return 4 * Math.pow(x - 0.5, 3) + 0.5;
+        },
     };
 })();

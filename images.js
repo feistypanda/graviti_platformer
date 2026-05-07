@@ -1,8 +1,7 @@
 
 const images = {
     title (){
-        
-        let g = createGraphics(600, 600, P2D);
+        let g = processing.createGraphics(600, 600, processing.constants.P2D);
 
         function drawIt (mask) {
 
@@ -12,8 +11,8 @@ const images = {
             g.stroke(mask? 255:190);
             g.strokeWeight(20);
 
-            g.strokeJoin(MITER);
-            g.strokeCap(PROJECT);
+            g.strokeJoin(processing.constants.MITER);
+            g.strokeCap(processing.constants.PROJECT);
 
             g.beginShape();
             g.vertex (106, 40);
@@ -63,10 +62,10 @@ const images = {
             g.stroke(mask?255:190);
 
             g.beginShape();
-            g.vertex (479, 40);
-            g.vertex (552, 40);
-            g.vertex (514, 40);
-            g.vertex (514, 141);
+            g.vertex (476, 40);
+            g.vertex (549, 40);
+            g.vertex (511, 40);
+            g.vertex (511, 141);
             g.endShape();
 
             g.beginShape();
@@ -88,18 +87,12 @@ const images = {
                 g.rect(0, 150, 600, 600);
             }
 
-            return g;
+            return g.get();
         }
+    
+        let img = drawIt(false);
+        img.mask(drawIt(true));
 
-        return drawIt(false).get().mask(drawIt(true).get());
-
+        return img;
     },
 };
-
-const load = (() => {
-
-    let keys = Object.keys (images);
-    let currentLoadingInd = 0;
-    
-    return function () {};
-})();

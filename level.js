@@ -19,13 +19,7 @@ level = (function () {
         this.blueFilled = 0;
 
         // keep track of time spent on each level
-        this.bestLevelTimes = (() => {
-            let arr = [];
-            for (let i = 0; i < levelData.length; i ++) {
-                arr.push(0);
-            }
-            return arr;
-        })();
+        this.bestLevelTimes = Array(levelData.length).fill(0);
         this.currentLevelStartTime = 0;
         this.currentLevelTime = 0;
     }

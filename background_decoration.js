@@ -50,10 +50,9 @@ class BackgroundShape {
 let backgroundHandler = {
     shapes: [],
 
-    run () {
-        if (Math.random() < 0.1/3 / 10) { // this function is called ten times a frame, so this.addrandom happens every 30 frames ish
-            
-            this.addRandom();
+    run (menu) {
+        if (Math.random() < 0.1/3 / 10 || (menu && Math.random() < 0.001)) { // this function is called ten times a frame, so this.addrandom happens every 30 frames ish
+            this.addRandom(menu);
         }
 
         for (let i = this.shapes.length - 1; i >= 0; i --) {
@@ -64,11 +63,11 @@ let backgroundHandler = {
         }
     },
 
-    addRandom () {
+    addRandom (menu) {
 
         this.shapes.push(new BackgroundShape({
-            x: player.position.x + Math.random() * 600 - 300,
-            y: player.position.y + Math.random() * 600 - 300,
+            x: (menu ? 300 : player.position.x) + Math.random() * 600 - 300,
+            y: (menu ? 300 : player.position.y) + Math.random() * 600 - 300,
             
             vx: Math.random () * 0.5 - 0.25,
             vy: Math.random () * 0.5 - 0.25,

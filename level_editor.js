@@ -6,13 +6,22 @@ levelEditor = (function() {
         this.offset = vector.new(0, 0);
 
         // the list of the different block types to cycle through
-        this.typesOfBlocks = ["wall", "color", "erase", "spawn", "pad", "door", "text", "reverseDoor", "filter"];
+        this.typesOfBlocks = ["wall", "color", "erase", "spawn", "pad", "door", "text", "filter"];
 
         // the index of the type of block that is currently selected in the block types array
         this.currentBlock = 0;
 
         // the display pannel
         this.pannelY = 520;
+
+        this.copyIndicator = 0;
+
+        this.optionsOpen = false;
+        this.optionsWidth = 100;
+
+        this.textInsertMenu = false;
+        // this.textBlock = block;
+        this.textInsertText = "";
     }
 
     // function to find the coordinates of the block where the mouse is
@@ -38,12 +47,6 @@ levelEditor = (function() {
         // get the x and y of the block where the mouse is and the type of block to add
         [x, y, type] = [...this.findBlockCoords()];
 
-        //if were adding a wire then dont just do that
-        if (type === "wire") {
-            this.blocks.push({nodes: [[x, y]], name: "wire", color: colors.none, colorName: "none"});
-            return "wire";
-        }
-
         // remove all blocks already at this coordinate so that we dont get overlapment
         this.blocks = this.blocks.filter(k => k.x !== x || k.y !== y);
 
@@ -68,6 +71,7 @@ levelEditor = (function() {
 
         // get the x and y of the block where the mouse is
         [x, y] = [...this.findBlockCoords()];
+        let [mouseX, mouseY] = [globalMouseX, globalMouseY];
 
         // see if there is a block at these coordinates, if there is then get the data of that block
         let blockIndex = this.blocks.findIndex(k => "" + k.x + k.y === "" + x + y);
@@ -76,11 +80,22 @@ levelEditor = (function() {
         if (blockIndex < 0) return;
         let block = this.blocks[blockIndex];
 
+        const setUpOptionsMenu = () => {
+            this.optionsOpen = true;
+            const [mx, my] = [mouseX - 20, mouseY - 20];
+
+            this.oBlock = block;
+    
+            this.optionsHeight = this.optionsOptions.length * 30;
+            this.optionsX = (mx + this.offset.x < 600 - this.optionsWidth) ? mx : (mx + 40 - this.optionsWidth);
+            this.optionsY = (my + this.offset.y < 600 - this.optionsHeight) ? my : (my + 40 - this.optionsHeight);
+        }
+
         switch (block.name) {
         case "wall":
             // first find out which part of the block was right clicked on
             let clickedSide;
-            let [mouseX, mouseY] = [globalMouseX, globalMouseY];
+            
             let [x, y, w, h] = [block.x, block.y, BLOCK_SIZE, BLOCK_SIZE];
             let [cx, cy] = [x + w/2, y + h/2];
 
@@ -125,34 +140,30 @@ levelEditor = (function() {
             break;
         case "pad":
 
-            if (keys["="]) {
+            this.optionsOptions = [{text: "ID +", func: function () {levelEditor.oBlock.connectedId ++;}}, 
+                {text: "ID -", func: function () {levelEditor.oBlock.connectedId --;}},
+                {text: "COLOR", func: function () {
+                    let newColorName2 = Object.keys(colors)[(Object.keys(colors).indexOf(levelEditor.oBlock.colorName) + 1) % Object.keys(colors).length];
 
-                // change id
-                block.connectedId ++;
-            } else if (keys["-"]) {
-                block.connectedId --;
-            } else if (keys["o"]) {
-                let newColorName2 = Object.keys(colors)[(Object.keys(colors).indexOf(block.colorName) + 1) % Object.keys(colors).length];
+                levelEditor.oBlock.colorName = newColorName2;
+                levelEditor.oBlock.color = colors[newColorName2];}}, 
+                {text: "ROTATE", func: function () {
+                    // figure out the next orientation
+                    let orientationList = ["top", "left", "bottom", "right"];
+                    let newOrientaion = orientationList[(orientationList.indexOf(levelEditor.oBlock.orientation) + 1) % orientationList.length];
 
-                block.colorName = newColorName2;
-                block.color = colors[newColorName2];
-            } else {
-                // figure out the next orientation
-                let orientationList = ["top", "left", "bottom", "right"];
-                let newOrientaion = orientationList[(orientationList.indexOf(block.orientation) + 1) % orientationList.length];
+                    // set the oreintation
+                    levelEditor.oBlock.orientation = newOrientaion;}}];
 
-                // set the oreintation
-                block.orientation = newOrientaion;
-            }
+            setUpOptionsMenu ();
             break;
         case "door":
-            if (keys["="]) {
+            
+            this.optionsOptions = [{text: "ID +", func: function () {levelEditor.oBlock.id ++;}}, 
+                {text: "ID -", func: function () {levelEditor.oBlock.id --;}},];
+                
+            setUpOptionsMenu ();
 
-                // change id
-                block.id ++;
-            } else if (keys["-"]) {
-                block.id --;
-            }
             break;
         case "reverseDoor":
             if (keys["="]) {
@@ -171,12 +182,12 @@ levelEditor = (function() {
             block.color = colors[newColorName3];
             break;
         case "text":
-            let blurbs = ["WAD or ARROWs\nto move", "When you touch a colored block,\ngravity changes so that\nthe side you touched is beneath you"];
-            if (keys.a) {
-                block.text = blurbs[0];
-            } else if (keys.b) {
-                block.text = blurbs[1];
-            }
+            this.textInsertMenu = true;
+            this.textBlock = block;
+            this.textInsertText = "";
+
+            click = false;
+            // block.text = prompt("Enter Text");
             break;
         }
         
@@ -184,8 +195,10 @@ levelEditor = (function() {
 
     LevelEditor.prototype.update = function() {
 
+        this.copyIndicator *= 0.9;
+
         // the mouse is clicked, either add or edit blocks
-        if (click) {
+        if (click && !this.textInsertMenu && !this.optionsOpen && globalMouseY + this.offset.y < this.pannelY) {
 
             // if the mouse is being left clicked then add a block, otherwise if its a right click edit a block
             switch (globalMouseButton) {
@@ -204,10 +217,10 @@ levelEditor = (function() {
         }
 
         // if the space bar is pressed then log the info
-        if(keys[" "]) this.log();
+        if(keys[" "] && !this.textInsertMenu) this.log();
 
         // if the c key is pressed cycle through the blocks
-        if (keys.c) this.currentBlock = (this.currentBlock + 1) % this.typesOfBlocks.length;
+        // if (keys.c && !this.textInsertMenu) this.currentBlock = (this.currentBlock + 1) % this.typesOfBlocks.length;
 
         // we only want it to trigger once, so set the key to false
         keys.c = false; 
@@ -339,6 +352,10 @@ levelEditor = (function() {
 
         // log the info so that it can be saved
         console.log(JSON.stringify(data));
+
+        // copy string
+        navigator.clipboard.writeText(JSON.stringify(data));
+        this.copyIndicator = 255;
     }
 
     // create a level editor that can be used
